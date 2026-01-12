@@ -499,7 +499,7 @@ const SkinSystem = {
             }
         }
     }
-};
+}; 
 
 // Global functions for HTML
 window.buySkin = (skinId) => SkinSystem.buySkin(skinId);
