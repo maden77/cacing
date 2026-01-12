@@ -5,7 +5,7 @@ const CONFIG = {
     BOT_COUNT: 20,
     PLAYER_SIZE: 20,
     MAX_SEGMENTS: 80,
-    COLLISION_DISTANCE: 38,
+    COLLISION_DISTANCE: 35, // Sedikit lebih besar untuk memudahkan makan bot
     FOOD_ICONS: ['🍎','🍕','🍔','🍟','🍩','🍗','🧀','🥓','🥩','🌭','🍣','🍜','🥪','🍦','🍰','🥑','🥨','🍪','🍉','🥝'],
     BOT_NAMES: ['Bot-Alpha','Bot-Beta','Bot-Gamma','Bot-Delta','Bot-Epsilon','Bot-Zeta','Bot-Eta','Bot-Theta']
 };
@@ -155,7 +155,38 @@ class Snake {
     updateAI() {
         this.aiTimer++;
         
-        // Find closest food
+        // Find closest player to fear
+        let closestPlayer = null;
+        let playerDist = Infinity;
+        
+        GameState.players.forEach(player => {
+            if(player === this || player.isBot) return;
+            const dist = Math.hypot(this.x - player.x, this.y - player.y);
+            if(dist < playerDist && dist < 600) { // Jarak deteksi lebih jauh
+                playerDist = dist;
+                closestPlayer = player;
+                
+                // Bot selalu takut dengan player (tidak peduli ukuran)
+                this.fearLevel = 1 - (dist / 600);
+            }
+        });
+        
+        // Prioritasi lari dari player
+        if(closestPlayer && playerDist < 600) {
+            // Flee from player (selalu kabur)
+            this.aiState = 'flee';
+            const fleeAngle = Math.atan2(this.y - closestPlayer.y, this.x - closestPlayer.x);
+            this.targetAngle = fleeAngle + (Math.random() - 0.5) * this.fearLevel * 0.5;
+            
+            // Bot bisa lebih cepat saat lari
+            this.speed = this.baseSpeed * (1 + this.fearLevel * 0.5);
+            return;
+        }
+        
+        // Reset speed jika tidak lari
+        this.speed = this.baseSpeed;
+        
+        // Find closest food (hanya jika aman)
         let closestFood = null;
         let foodDist = Infinity;
         
@@ -167,33 +198,8 @@ class Snake {
             }
         });
         
-        // Find closest player to fear
-        let closestPlayer = null;
-        let playerDist = Infinity;
-        let shouldFear = false;
-        
-        GameState.players.forEach(player => {
-            if(player === this || player.isBot) return;
-            const dist = Math.hypot(this.x - player.x, this.y - player.y);
-            if(dist < playerDist && dist < 400) {
-                playerDist = dist;
-                closestPlayer = player;
-                
-                // Fear if player is bigger
-                if(player.score > this.score * 1.5) {
-                    shouldFear = true;
-                    this.fearLevel = 1 - (dist / 400);
-                }
-            }
-        });
-        
         // AI State Machine
-        if(shouldFear && closestPlayer) {
-            // Flee from player
-            this.aiState = 'flee';
-            const fleeAngle = Math.atan2(this.y - closestPlayer.y, this.x - closestPlayer.x);
-            this.targetAngle = fleeAngle + (Math.random() - 0.5) * this.fearLevel;
-        } else if(closestFood && foodDist < 600) {
+        if(closestFood && foodDist < 800) {
             // Chase food
             this.aiState = 'chase_food';
             this.aiTarget = closestFood;
@@ -216,24 +222,26 @@ class Snake {
            screenY < -200 || screenY > ctx.canvas.height + 200) {
             return;
         }
-        // ==== TAMBAHKAN INI: Visual indicator untuk bot yang bisa dimakan ====
-    if(this.isBot && GameState.player) {
-        const distToPlayer = Math.hypot(this.x - GameState.player.x, this.y - GameState.player.y);
-        const canEat = distToPlayer < CONFIG.COLLISION_DISTANCE * 2;
         
-        if(canEat) {
-            // Glow effect merah saat bot bisa dimakan
-            ctx.shadowColor = 'rgba(239,68,68,0.7)';
-            ctx.shadowBlur = 20;
+        // ==== TAMBAHKAN INI: Visual indicator untuk bot yang bisa dimakan ====
+        if(this.isBot && GameState.player) {
+            const distToPlayer = Math.hypot(this.x - GameState.player.x, this.y - GameState.player.y);
+            const canEat = distToPlayer < CONFIG.COLLISION_DISTANCE * 2;
             
-            // Draw targeting circle
-            ctx.strokeStyle = 'rgba(239,68,68,0.5)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(screenX, screenY, CONFIG.COLLISION_DISTANCE, 0, Math.PI * 2);
-            ctx.stroke();
+            if(canEat) {
+                // Glow effect merah saat bot bisa dimakan
+                ctx.shadowColor = 'rgba(239,68,68,0.7)';
+                ctx.shadowBlur = 20;
+                
+                // Draw targeting circle
+                ctx.strokeStyle = 'rgba(239,68,68,0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, CONFIG.COLLISION_DISTANCE, 0, Math.PI * 2);
+                ctx.stroke();
+            }
         }
-    }
+        // ======================================================================
         
         // Draw segments
         for(let i = this.segments.length - 1; i >= 0; i--) {
@@ -288,6 +296,9 @@ class Snake {
                 }
             }
         }
+        
+        // Reset shadow
+        ctx.shadowBlur = 0;
     }
 
     drawFace(ctx, x, y) {
@@ -604,22 +615,15 @@ const Game = {
         GameState.bots.forEach((bot, index) => {
             bot.update();
             
-            
-        // HAPUS logika bot makan player, hanya player bisa makan bot
-        if(bot.checkCollision(GameState.player)) {
-            // Player selalu bisa makan bot (tidak perlu syarat score)
-            this.eatBot(bot, index);
-        }
-            // Check collision with player
+            // ===== PERUBAHAN PENTING DI SINI =====
+            // Player selalu bisa makan bot (tanpa syarat apapun)
             if(bot.checkCollision(GameState.player)) {
-                if(GameState.player.score > bot.score * 1.2) {
-                    // Player eats bot
-                    this.eatBot(bot, index);
-               
-                
+                // Player makan bot
+                this.eatBot(bot, index);
+            }
+            // =====================================
             
-            
-            // Bot eats food
+            // Bot eats food (biarkan ini tetap)
             GameState.foods.forEach((food, foodIndex) => {
                 const dist = Math.hypot(bot.x - food.x, bot.y - food.y);
                 if(dist < CONFIG.COLLISION_DISTANCE) {
@@ -705,46 +709,50 @@ const Game = {
     },
 
     eatBot(bot, index) {
-        // Calculate bonus
-        const bonus = bot.score * 3;
+        // Calculate bonus (bot memberikan bonus besar)
+        const bonus = bot.score * 3; // Bonus lebih besar
         GameState.player.score += bonus;
-        GameState.coins += Math.ceil(bot.score);
+        GameState.coins += Math.ceil(bot.score * 1.5); // Koin lebih banyak
         
         // Play sound
         Audio.play('collision');
         
         // Create lots of particles
-        for(let i = 0; i < 25; i++) {
+        for(let i = 0; i < 25; i++) { // Lebih banyak partikel
             GameState.particles.push(new Particle(bot.x, bot.y, 'score'));
         }
         
         // Create big score popup
-        this.createScorePopup(bot.x, bot.y, `BONUS +${bonus}!`);
+        this.createScorePopup(bot.x, bot.y, `Makan Bot +${bonus}!`);
         
-        // Respawn bot
+        // Respawn bot di tempat acak
         const angle = Math.random() * Math.PI * 2;
-        const dist = 1000 + Math.random() * 3000;
+        const dist = 2000 + Math.random() * 3000; // Jauh dari player
         bot.x = Math.cos(angle) * dist;
         bot.y = Math.sin(angle) * dist;
-        bot.score = Math.floor(Math.random() * 150);
+        bot.score = Math.floor(Math.random() * 150); // Reset score bot
         bot.segments = [];
         for(let i = 0; i < 30; i++) {
             bot.segments.push({ x: bot.x, y: bot.y });
         }
         
+        // Bot jadi lebih agresif menghindar setelah respawn
+        bot.fearLevel = 0.8;
+        
         // Send chat message
         if(GameState.mode === 'multi') {
-            Chat.sendSystem(`${GameState.player.name} makan ${bot.name}!`);
+            Chat.sendSystem(`🔥 ${GameState.player.name} makan ${bot.name}!`);
         }
-       // Achievement/effect khusus
-    if(bot.score > 100) {
-        // Jika bot yang dimakan besar, dapat bonus ekstra
-        GameState.player.score += 500;
-        GameState.coins += 100;
-        this.createScorePopup(bot.x, bot.y, `BONUS RAKSASA +500!`);
-        Chat.sendSystem(`🎉 ${GameState.player.name} makan bot raksasa!`);
-    }
-},
+        
+        // Achievement/effect khusus
+        if(bot.score > 100) {
+            // Jika bot yang dimakan besar, dapat bonus ekstra
+            GameState.player.score += 500;
+            GameState.coins += 100;
+            this.createScorePopup(bot.x, bot.y, `BONUS RAKSASA +500!`);
+            Chat.sendSystem(`🎉 ${GameState.player.name} makan bot raksasa!`);
+        }
+    },
 
     createFood() {
         return {
@@ -1745,13 +1753,6 @@ function setupAudioUploads() {
     
     // Keyboard controls for desktop
     const keys = {};
-    
-    document.onkeydown = (e) => {
-        if(!GameState.player) return;
-        
-        keys[e.key.toLowerCase()] = true;
-        updateKeyboardMovement();
-    };
     
     document.onkeydown = (e) => {
         if(!GameState.player) return;
