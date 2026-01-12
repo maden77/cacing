@@ -5,7 +5,7 @@ const CONFIG = {
     BOT_COUNT: 20,
     PLAYER_SIZE: 20,
     MAX_SEGMENTS: 80,
-    COLLISION_DISTANCE: 30,
+    COLLISION_DISTANCE: 38,
     FOOD_ICONS: ['🍎','🍕','🍔','🍟','🍩','🍗','🧀','🥓','🥩','🌭','🍣','🍜','🥪','🍦','🍰','🥑','🥨','🍪','🍉','🥝'],
     BOT_NAMES: ['Bot-Alpha','Bot-Beta','Bot-Gamma','Bot-Delta','Bot-Epsilon','Bot-Zeta','Bot-Eta','Bot-Theta']
 };
@@ -216,6 +216,24 @@ class Snake {
            screenY < -200 || screenY > ctx.canvas.height + 200) {
             return;
         }
+        // ==== TAMBAHKAN INI: Visual indicator untuk bot yang bisa dimakan ====
+    if(this.isBot && GameState.player) {
+        const distToPlayer = Math.hypot(this.x - GameState.player.x, this.y - GameState.player.y);
+        const canEat = distToPlayer < CONFIG.COLLISION_DISTANCE * 2;
+        
+        if(canEat) {
+            // Glow effect merah saat bot bisa dimakan
+            ctx.shadowColor = 'rgba(239,68,68,0.7)';
+            ctx.shadowBlur = 20;
+            
+            // Draw targeting circle
+            ctx.strokeStyle = 'rgba(239,68,68,0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, CONFIG.COLLISION_DISTANCE, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
         
         // Draw segments
         for(let i = this.segments.length - 1; i >= 0; i--) {
@@ -586,16 +604,20 @@ const Game = {
         GameState.bots.forEach((bot, index) => {
             bot.update();
             
+            
+        // HAPUS logika bot makan player, hanya player bisa makan bot
+        if(bot.checkCollision(GameState.player)) {
+            // Player selalu bisa makan bot (tidak perlu syarat score)
+            this.eatBot(bot, index);
+        }
             // Check collision with player
             if(bot.checkCollision(GameState.player)) {
                 if(GameState.player.score > bot.score * 1.2) {
                     // Player eats bot
                     this.eatBot(bot, index);
-                } else if(bot.score > GameState.player.score * 1.2) {
-                    // Bot eats player (game over)
-                    this.gameOver(`Dimakan oleh ${bot.name}!`);
-                }
-            }
+               
+                
+            
             
             // Bot eats food
             GameState.foods.forEach((food, foodIndex) => {
@@ -684,15 +706,15 @@ const Game = {
 
     eatBot(bot, index) {
         // Calculate bonus
-        const bonus = bot.score * 2;
+        const bonus = bot.score * 3;
         GameState.player.score += bonus;
-        GameState.coins += Math.ceil(bot.score / 5);
+        GameState.coins += Math.ceil(bot.score);
         
         // Play sound
         Audio.play('collision');
         
         // Create lots of particles
-        for(let i = 0; i < 20; i++) {
+        for(let i = 0; i < 25; i++) {
             GameState.particles.push(new Particle(bot.x, bot.y, 'score'));
         }
         
@@ -701,10 +723,10 @@ const Game = {
         
         // Respawn bot
         const angle = Math.random() * Math.PI * 2;
-        const dist = 1000 + Math.random() * 2000;
+        const dist = 1000 + Math.random() * 3000;
         bot.x = Math.cos(angle) * dist;
         bot.y = Math.sin(angle) * dist;
-        bot.score = Math.floor(Math.random() * 100);
+        bot.score = Math.floor(Math.random() * 150);
         bot.segments = [];
         for(let i = 0; i < 30; i++) {
             bot.segments.push({ x: bot.x, y: bot.y });
@@ -714,7 +736,15 @@ const Game = {
         if(GameState.mode === 'multi') {
             Chat.sendSystem(`${GameState.player.name} makan ${bot.name}!`);
         }
-    },
+       // Achievement/effect khusus
+    if(bot.score > 100) {
+        // Jika bot yang dimakan besar, dapat bonus ekstra
+        GameState.player.score += 500;
+        GameState.coins += 100;
+        this.createScorePopup(bot.x, bot.y, `BONUS RAKSASA +500!`);
+        Chat.sendSystem(`🎉 ${GameState.player.name} makan bot raksasa!`);
+    }
+},
 
     createFood() {
         return {
