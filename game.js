@@ -1829,3 +1829,18 @@ window.Room = Room;
 window.Shop = Shop;
 window.Chat = Chat;
 window.Audio = Audio;
+
+       // Buat elemen baru jadi draggable
+makeElementDraggable('my-custom-panel', {
+    saveKey: 'customPanel',
+    defaultPosition: { left: '100px', top: '100px' }
+});
+
+// Dapatkan posisi elemen
+const pos = getUIPosition('playerList');
+
+// Simpan posisi manual
+saveUIPosition('myElement', {
+    left: '200px',
+    top: '300px'
+});
