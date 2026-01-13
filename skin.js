@@ -12,7 +12,7 @@ const SkinSystem = {
             price: 500,
             effect: {
                 speedMultiplier: 1.5,
-                duration: 10, // detik
+                duration: 10,
                 cooldown: 30
             },
             description: '+50% kecepatan untuk 10 detik'
@@ -148,7 +148,7 @@ const SkinSystem = {
 
     // Player inventory
     inventory: {
-        owned: ['skin_default'], // Skin yang dimiliki
+        owned: ['skin_default'],
         equipped: {
             speed: null,
             magnet: null,
@@ -476,11 +476,13 @@ const SkinSystem = {
         if(result.message) {
             Shop.showMessage(result.message, result.success);
         }
+        this.updateShop();
     },
 
     equipSkin(skinId) {
         if(this.equip(skinId)) {
             Shop.showMessage('Skin berhasil dipasang!', true);
+            this.updateShop();
         }
     },
 
