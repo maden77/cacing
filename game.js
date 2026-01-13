@@ -5,7 +5,7 @@ const CONFIG = {
     BOT_COUNT: 20,
     PLAYER_SIZE: 20,
     MAX_SEGMENTS: 80,
-    COLLISION_DISTANCE: 35, // Sedikit lebih besar untuk memudahkan makan bot
+    COLLISION_DISTANCE: 35,
     FOOD_ICONS: ['🍎','🍕','🍔','🍟','🍩','🍗','🧀','🥓','🥩','🌭','🍣','🍜','🥪','🍦','🍰','🥑','🥨','🍪','🍉','🥝'],
     BOT_NAMES: ['Bot-Alpha','Bot-Beta','Bot-Gamma','Bot-Delta','Bot-Epsilon','Bot-Zeta','Bot-Eta','Bot-Theta']
 };
@@ -20,7 +20,7 @@ const GameState = {
     projectiles: [],
     players: new Map(),
     cam: { x: 0, y: 0, zoom: 1 },
-    coins: 1000, // Start with some coins for testing
+    coins: 1000,
     peer: null,
     conn: null,
     roomId: null,
@@ -62,7 +62,8 @@ window.onload = async function() {
     }, 1500);
 };
 
-     class Projectile {
+// ==================== PROJECTILE CLASS ====================
+class Projectile {
     constructor(x, y, angle, speed, icon) {
         this.x = x;
         this.y = y;
@@ -72,12 +73,14 @@ window.onload = async function() {
         this.life = 1.0; 
         this.radius = 12;
     }
+    
     update() {
         this.x += Math.cos(this.angle) * this.speed;
         this.y += Math.sin(this.angle) * this.speed;
         this.life -= 0.008; 
         return this.life > 0;
     }
+    
     draw(ctx) {
         const screenX = this.x - GameState.cam.x + ctx.canvas.width/2;
         const screenY = this.y - GameState.cam.y + ctx.canvas.height/2;
@@ -90,7 +93,6 @@ window.onload = async function() {
         ctx.restore();
     }
 }
-
 
 // ==================== SNAKE CLASS ====================
 class Snake {
@@ -122,6 +124,8 @@ class Snake {
             this.aiTarget = null;
             this.aiTimer = 0;
             this.fearLevel = 0;
+            this.shootTimer = 0;
+            this.hasShootLogic = false; // Flag untuk menandai bot yang sudah punya logika tembak
         }
         
         // Apply skin effects
@@ -183,25 +187,21 @@ class Snake {
         }
     }
    
-   updateAI() {
-    this.aiTimer++;
-    if (!this.shootTimer) this.shootTimer = 0; // Inisialisasi jika belum ada
-    this.shootTimer++;
+    updateAI() {
+        this.aiTimer++;
+        this.shootTimer++;
 
-    // LOGIKA MENEMBAK
-    if (this.shootTimer > 250) { 
-        const distToPlayer = Math.hypot(this.x - GameState.player.x, this.y - GameState.player.y);
-        if (distToPlayer < 500) {
-            const angleToPlayer = Math.atan2(GameState.player.y - this.y, GameState.player.x - this.x);
-            const foodIcon = CONFIG.FOOD_ICONS[Math.floor(Math.random() * CONFIG.FOOD_ICONS.length)];
-            
-            GameState.projectiles.push(new Projectile(this.x, this.y, angleToPlayer, 7, foodIcon));
-            this.shootTimer = 0;
+        // LOGIKA MENEMBAK (untuk bot yang belum punya logika tembak)
+        if (!this.hasShootLogic && this.shootTimer > 250) { 
+            const distToPlayer = Math.hypot(this.x - GameState.player.x, this.y - GameState.player.y);
+            if (distToPlayer < 500) {
+                const angleToPlayer = Math.atan2(GameState.player.y - this.y, GameState.player.x - this.x);
+                const foodIcon = CONFIG.FOOD_ICONS[Math.floor(Math.random() * CONFIG.FOOD_ICONS.length)];
+                
+                GameState.projectiles.push(new Projectile(this.x, this.y, angleToPlayer, 7, foodIcon));
+                this.shootTimer = 0;
+            }
         }
-    }
-    
-
- 
         
         // Find closest player to fear
         let closestPlayer = null;
@@ -210,18 +210,18 @@ class Snake {
         GameState.players.forEach(player => {
             if(player === this || player.isBot) return;
             const dist = Math.hypot(this.x - player.x, this.y - player.y);
-            if(dist < playerDist && dist < 600) { // Jarak deteksi lebih jauh
+            if(dist < playerDist && dist < 600) {
                 playerDist = dist;
                 closestPlayer = player;
                 
-                // Bot selalu takut dengan player (tidak peduli ukuran)
+                // Bot selalu takut dengan player
                 this.fearLevel = 1 - (dist / 600);
             }
         });
         
         // Prioritasi lari dari player
         if(closestPlayer && playerDist < 600) {
-            // Flee from player (selalu kabur)
+            // Flee from player
             this.aiState = 'flee';
             const fleeAngle = Math.atan2(this.y - closestPlayer.y, this.x - closestPlayer.x);
             this.targetAngle = fleeAngle + (Math.random() - 0.5) * this.fearLevel * 0.5;
@@ -271,7 +271,7 @@ class Snake {
             return;
         }
         
-        // ==== TAMBAHKAN INI: Visual indicator untuk bot yang bisa dimakan ====
+        // Visual indicator untuk bot yang bisa dimakan
         if(this.isBot && GameState.player) {
             const distToPlayer = Math.hypot(this.x - GameState.player.x, this.y - GameState.player.y);
             const canEat = distToPlayer < CONFIG.COLLISION_DISTANCE * 2;
@@ -289,7 +289,6 @@ class Snake {
                 ctx.stroke();
             }
         }
-        // ======================================================================
         
         // Draw segments
         for(let i = this.segments.length - 1; i >= 0; i--) {
@@ -304,7 +303,6 @@ class Snake {
                 segmentColor = this.color;
             } else {
                 // Regular color with gradient effect
-                const intensity = 0.7 + (i / this.segments.length) * 0.3;
                 segmentColor = this.color;
             }
             
@@ -597,58 +595,20 @@ const Game = {
         
         // Update all entities
         this.updateEntities();
-   updateEntities() {
-    // 1. Update Player Utama
-    GameState.player.update();
-
-    // 2. LOGIKA TABRAKAN PELURU (BOT KE PLAYER)
-    if (GameState.projectiles) {
-        GameState.projectiles = GameState.projectiles.filter(proj => {
-            const alive = proj.update();
-            const dist = Math.hypot(proj.x - GameState.player.x, proj.y - GameState.player.y);
-            
-            if (dist < CONFIG.PLAYER_SIZE + proj.radius) {
-                // SKOR BERKURANG 10
-                GameState.player.score = Math.max(0, GameState.player.score - 10);
-                
-                // Audio & Popup Efek
-                if (typeof Audio !== 'undefined') Audio.play('collision');
-                this.createScorePopup(GameState.player.x, GameState.player.y, "-10 TERKENA!", "#ff0000");
-                
-                return false; // Hapus peluru karena sudah kena
-            }
-            return alive; // Tetap simpan jika masih hidup dan belum kena
-        });
-    }
-
-    // 3. Update Bot & Cek Tabrakan Badan (KODE ASLI KAMU)
-    GameState.bots.forEach((bot, index) => {
-        bot.update();
-        // Cek jika kepala player menabrak badan bot
-        if(bot.checkCollision && bot.checkCollision(GameState.player)) {
-            this.eatBot(bot, index);
-        }
-    });
-
-    // 4. Partikel (Jika ada)
-    if (GameState.particles) {
-        GameState.particles = GameState.particles.filter(p => p.update());
-    }
-}
-
         
         // Draw grid
         this.drawGrid(ctx);
-// TAMBAHKAN INI:
-GameState.projectiles.forEach(proj => proj.draw(ctx));
-
-GameState.bots.forEach(bot => bot.draw(ctx));
         
-        // Draw food with magnet effect
+        // Draw food
         this.drawFood(ctx);
         
         // Draw particles
         this.drawParticles(ctx);
+        
+        // Draw projectiles (jika ada sistem bot combat)
+        if (GameState.projectiles && typeof drawBotProjectiles === 'function') {
+            drawBotProjectiles(ctx);
+        }
         
         // Draw bots
         GameState.bots.forEach(bot => bot.draw(ctx));
@@ -696,10 +656,11 @@ GameState.bots.forEach(bot => bot.draw(ctx));
     updateEntities() {
         // Update player
         GameState.player.update();
-      // Di dalam Game.loop atau updateEntities
-updateBotCombatSystem(); // Panggil fungsi dari file baru
-
-
+        
+        // Panggil sistem combat bot jika ada
+        if (typeof updateBotCombatSystem === 'function') {
+            updateBotCombatSystem();
+        }
         
         // Apply magnet effect
         if(SkinSystem.isEffectActive('magnet')) {
@@ -710,15 +671,12 @@ updateBotCombatSystem(); // Panggil fungsi dari file baru
         GameState.bots.forEach((bot, index) => {
             bot.update();
             
-            // ===== PERUBAHAN PENTING DI SINI =====
-            // Player selalu bisa makan bot (tanpa syarat apapun)
-            if(bot.checkCollision(GameState.player)) {
-                // Player makan bot
+            // Player bisa makan bot
+            if(bot.checkCollision && bot.checkCollision(GameState.player)) {
                 this.eatBot(bot, index);
             }
-            // =====================================
             
-            // Bot eats food (biarkan ini tetap)
+            // Bot eats food
             GameState.foods.forEach((food, foodIndex) => {
                 const dist = Math.hypot(bot.x - food.x, bot.y - food.y);
                 if(dist < CONFIG.COLLISION_DISTANCE) {
@@ -751,7 +709,9 @@ updateBotCombatSystem(); // Panggil fungsi dari file baru
         });
         
         // Update particles
-        GameState.particles = GameState.particles.filter(p => p.update());
+        if (GameState.particles) {
+            GameState.particles = GameState.particles.filter(p => p.update());
+        }
     },
 
     applyMagnetEffect() {
@@ -805,15 +765,15 @@ updateBotCombatSystem(); // Panggil fungsi dari file baru
 
     eatBot(bot, index) {
         // Calculate bonus (bot memberikan bonus besar)
-        const bonus = bot.score * 3; // Bonus lebih besar
+        const bonus = bot.score * 3;
         GameState.player.score += bonus;
-        GameState.coins += Math.ceil(bot.score * 1.5); // Koin lebih banyak
+        GameState.coins += Math.ceil(bot.score * 1.5);
         
         // Play sound
         Audio.play('collision');
         
         // Create lots of particles
-        for(let i = 0; i < 25; i++) { // Lebih banyak partikel
+        for(let i = 0; i < 25; i++) {
             GameState.particles.push(new Particle(bot.x, bot.y, 'score'));
         }
         
@@ -822,10 +782,10 @@ updateBotCombatSystem(); // Panggil fungsi dari file baru
         
         // Respawn bot di tempat acak
         const angle = Math.random() * Math.PI * 2;
-        const dist = 2000 + Math.random() * 3000; // Jauh dari player
+        const dist = 2000 + Math.random() * 3000;
         bot.x = Math.cos(angle) * dist;
         bot.y = Math.sin(angle) * dist;
-        bot.score = Math.floor(Math.random() * 150); // Reset score bot
+        bot.score = Math.floor(Math.random() * 150);
         bot.segments = [];
         for(let i = 0; i < 30; i++) {
             bot.segments.push({ x: bot.x, y: bot.y });
@@ -859,11 +819,12 @@ updateBotCombatSystem(); // Panggil fungsi dari file baru
         };
     },
 
-    createScorePopup(x, y, text) {
+    createScorePopup(x, y, text, color = '#fbbf24') {
         // Create temporary score popup
         const popup = {
             x, y,
             text,
+            color,
             life: 1,
             yOffset: 0
         };
@@ -883,7 +844,7 @@ updateBotCombatSystem(); // Panggil fungsi dari file baru
             
             ctx.save();
             ctx.globalAlpha = popup.life;
-            ctx.fillStyle = '#fbbf24';
+            ctx.fillStyle = popup.color;
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -1102,7 +1063,7 @@ updateBotCombatSystem(); // Panggil fungsi dari file baru
         
         // Add bots
         GameState.bots.forEach((bot, index) => {
-            if(index < 3) { // Show only first 3 bots
+            if(index < 3) {
                 const item = document.createElement('div');
                 item.className = 'player-item';
                 item.innerHTML = `
@@ -1924,18 +1885,3 @@ window.Room = Room;
 window.Shop = Shop;
 window.Chat = Chat;
 window.Audio = Audio;
-
-       // Buat elemen baru jadi draggable
-makeElementDraggable('my-custom-panel', {
-    saveKey: 'customPanel',
-    defaultPosition: { left: '100px', top: '100px' }
-});
-
-// Dapatkan posisi elemen
-const pos = getUIPosition('playerList');
-
-// Simpan posisi manual
-saveUIPosition('myElement', {
-    left: '200px',
-    top: '300px'
-});
