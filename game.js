@@ -17,6 +17,7 @@ const GameState = {
     player: null,
     foods: [],
     bots: [],
+    projectiles: [],
     players: new Map(),
     cam: { x: 0, y: 0, zoom: 1 },
     coins: 1000, // Start with some coins for testing
@@ -60,6 +61,36 @@ window.onload = async function() {
         console.log('Game initialized successfully!');
     }, 1500);
 };
+
+     class Projectile {
+    constructor(x, y, angle, speed, icon) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.speed = speed;
+        this.icon = icon;
+        this.life = 1.0; 
+        this.radius = 12;
+    }
+    update() {
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
+        this.life -= 0.008; 
+        return this.life > 0;
+    }
+    draw(ctx) {
+        const screenX = this.x - GameState.cam.x + ctx.canvas.width/2;
+        const screenY = this.y - GameState.cam.y + ctx.canvas.height/2;
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.icon, screenX, screenY);
+        ctx.restore();
+    }
+}
+
 
 // ==================== SNAKE CLASS ====================
 class Snake {
@@ -151,9 +182,26 @@ class Snake {
             this.updateAI();
         }
     }
+   
+   updateAI() {
+    this.aiTimer++;
+    if (!this.shootTimer) this.shootTimer = 0; // Inisialisasi jika belum ada
+    this.shootTimer++;
 
-    updateAI() {
-        this.aiTimer++;
+    // LOGIKA MENEMBAK
+    if (this.shootTimer > 250) { 
+        const distToPlayer = Math.hypot(this.x - GameState.player.x, this.y - GameState.player.y);
+        if (distToPlayer < 500) {
+            const angleToPlayer = Math.atan2(GameState.player.y - this.y, GameState.player.x - this.x);
+            const foodIcon = CONFIG.FOOD_ICONS[Math.floor(Math.random() * CONFIG.FOOD_ICONS.length)];
+            
+            GameState.projectiles.push(new Projectile(this.x, this.y, angleToPlayer, 7, foodIcon));
+            this.shootTimer = 0;
+        }
+    }
+    
+
+ 
         
         // Find closest player to fear
         let closestPlayer = null;
@@ -549,9 +597,52 @@ const Game = {
         
         // Update all entities
         this.updateEntities();
+   updateEntities() {
+    // 1. Update Player Utama
+    GameState.player.update();
+
+    // 2. LOGIKA TABRAKAN PELURU (BOT KE PLAYER)
+    if (GameState.projectiles) {
+        GameState.projectiles = GameState.projectiles.filter(proj => {
+            const alive = proj.update();
+            const dist = Math.hypot(proj.x - GameState.player.x, proj.y - GameState.player.y);
+            
+            if (dist < CONFIG.PLAYER_SIZE + proj.radius) {
+                // SKOR BERKURANG 10
+                GameState.player.score = Math.max(0, GameState.player.score - 10);
+                
+                // Audio & Popup Efek
+                if (typeof Audio !== 'undefined') Audio.play('collision');
+                this.createScorePopup(GameState.player.x, GameState.player.y, "-10 TERKENA!", "#ff0000");
+                
+                return false; // Hapus peluru karena sudah kena
+            }
+            return alive; // Tetap simpan jika masih hidup dan belum kena
+        });
+    }
+
+    // 3. Update Bot & Cek Tabrakan Badan (KODE ASLI KAMU)
+    GameState.bots.forEach((bot, index) => {
+        bot.update();
+        // Cek jika kepala player menabrak badan bot
+        if(bot.checkCollision && bot.checkCollision(GameState.player)) {
+            this.eatBot(bot, index);
+        }
+    });
+
+    // 4. Partikel (Jika ada)
+    if (GameState.particles) {
+        GameState.particles = GameState.particles.filter(p => p.update());
+    }
+}
+
         
         // Draw grid
         this.drawGrid(ctx);
+// TAMBAHKAN INI:
+GameState.projectiles.forEach(proj => proj.draw(ctx));
+
+GameState.bots.forEach(bot => bot.draw(ctx));
         
         // Draw food with magnet effect
         this.drawFood(ctx);
@@ -605,6 +696,10 @@ const Game = {
     updateEntities() {
         // Update player
         GameState.player.update();
+      // Di dalam Game.loop atau updateEntities
+updateBotCombatSystem(); // Panggil fungsi dari file baru
+
+
         
         // Apply magnet effect
         if(SkinSystem.isEffectActive('magnet')) {
