@@ -275,20 +275,26 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
         }
         
-        /* Player List */
-        #player-list { 
-            position: absolute; 
-            bottom: 100px; 
-            right: 20px; 
-            z-index: 50; 
-            display: none; 
-            background: rgba(20,20,40,0.9); 
-            padding: 15px; 
-            border-radius: 15px; 
-            border: 2px solid #3b82f6; 
-            max-height: 250px; 
-            width: 200px; 
-            overflow-y: auto; 
+        
+      #player-list {
+    position: absolute;
+    bottom: 100px;
+    right: 20px;
+    z-index: 50;
+    display: none; 
+    background: rgba(20, 20, 40, 0.9);
+    padding: 8px;           
+    width: 150px;           
+    max-height: 180px;      
+    border-radius: 10px;    
+    cursor: move;
+    touch-action: none; 
+    user-select: none;
+    backdrop-filter: blur(10px);
+    border: 2px solid #3b82f6; /* Menjaga garis tepi biru tetap ada */
+    overflow-y: auto;
+}
+
             backdrop-filter: blur(10px); 
         }
         .player-item { 
