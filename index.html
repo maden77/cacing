@@ -275,27 +275,24 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
         }
         
-        
-      #player-list {
-    position: absolute;
-    bottom: 100px;
-    right: 20px;
-    z-index: 50;
-    display: none; 
-    background: rgba(20, 20, 40, 0.9);
-    padding: 8px;           
-    width: 150px;           
-    max-height: 180px;      
-    border-radius: 10px;    
-    cursor: move;
-    touch-action: none; 
-    user-select: none;
-    backdrop-filter: blur(10px);
-    border: 2px solid #3b82f6; /* Menjaga garis tepi biru tetap ada */
-    overflow-y: auto;
-}
-
-            backdrop-filter: blur(10px); 
+        /* Player List */
+        #player-list {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            z-index: 50;
+            display: none;
+            background: rgba(20, 20, 40, 0.9);
+            padding: 8px;
+            width: 150px;
+            max-height: 180px;
+            border-radius: 10px;
+            cursor: move;
+            touch-action: none;
+            user-select: none;
+            backdrop-filter: blur(10px);
+            border: 2px solid #3b82f6;
+            overflow-y: auto;
         }
         .player-item { 
             padding: 8px 10px; 
@@ -627,7 +624,6 @@
 
     <!-- Audio Elements -->
     <audio id="bg-music" loop>
-        <!-- Background music akan dimuat dari upload -->
         <source src="" type="audio/mpeg">
     </audio>
     <audio id="eat-sound" preload="auto">
@@ -647,6 +643,6 @@
     <script src="skin.js"></script>
     <script src="ui-handler.js"></script>
     <script src="game.js"></script>
-   <script src="bot-combat.js"></script>
+    <script src="bot-combat.js"></script>
 </body>
-</html> 
+</html>
