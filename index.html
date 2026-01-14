@@ -679,8 +679,8 @@
         const CONFIG = {
             WORLD_SIZE: 30000,
             FOOD_COUNT: 300,
-            BOT_COUNT: 15,
-            PLAYER_SIZE: 30,
+            BOT_COUNT: 20,
+            PLAYER_SIZE: 20,
             MAX_SEGMENTS: 80,
             COLLISION_DISTANCE: 40,
             SHOOT_COOLDOWN: 800,
@@ -994,7 +994,7 @@
                 this.health = 100;
                 this.maxHealth = 100;
                 this.segments = [];
-                this.segmentCount = isBot ? 25 : 35;
+                this.segmentCount = isBot ? 15 : 20 ;
                 this.mouthState = 'normal';
                 this.mouthTimer = 0;
                 this.lastActionTime = Date.now();
@@ -1418,7 +1418,7 @@
                         color: foodType.color,
                         ammoType: foodType.ammoType,
                         damage: foodType.damage,
-                        size: 18 + Math.random() * 12
+                        size: 23 + Math.random() * 17
                     });
                 }
             },
