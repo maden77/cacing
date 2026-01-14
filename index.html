@@ -1,0 +1,2433 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cacing Arena Pro - Mabar LAN</title>
+    <style>
+        /* RESET DAN ORIENTASI LANDSCAPE */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            user-select: none; 
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+            position: fixed;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        /* PESAN ORIENTASI */
+        #orientation-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        @media screen and (orientation: portrait) and (max-width: 1024px) {
+            #orientation-message {
+                display: flex;
+            }
+        }
+        
+        /* CANVAS - FULLSCREEN LANDSCAPE */
+        #game {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #050510 0%, #0a0a1a 100%);
+            z-index: 1;
+        }
+        
+        /* UI LAYERS */
+        #ui-layer { 
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 100; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: radial-gradient(circle at center, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.95) 100%); 
+            backdrop-filter: blur(5px); 
+        }
+        
+        #room-layer { 
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 101; 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            background: rgba(0,0,0,0.95); 
+        }
+        
+        /* PANEL MENU */
+        .panel { 
+            background: linear-gradient(135deg, #111122, #1a1a2e); 
+            padding: min(4vw, 30px); 
+            border-radius: min(4vw, 25px); 
+            border: min(0.8vw, 3px) solid #a855f7; 
+            width: 90vw; 
+            max-width: 450px; 
+            text-align: center; 
+            box-shadow: 0 0 min(5vw, 40px) rgba(168,85,247,0.4); 
+            animation: panel-glow 3s ease-in-out infinite alternate; 
+        }
+        
+        @keyframes panel-glow {
+            from { box-shadow: 0 0 min(3vw, 30px) rgba(168,85,247,0.4); }
+            to { box-shadow: 0 0 min(5vw, 50px) rgba(168,85,247,0.6); }
+        }
+        
+        /* HUD LANDSCAPE */
+        #hud {
+            position: absolute;
+            top: min(3vw, 20px);
+            left: min(3vw, 20px);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            gap: min(2vw, 10px);
+        }
+        
+        .hud-item {
+            background: rgba(20,20,40,0.85);
+            padding: min(2vw, 12px) min(3vw, 20px);
+            border-radius: min(3vw, 20px);
+            border: min(0.4vw, 2px) solid #a855f7;
+            display: flex;
+            align-items: center;
+            gap: min(2vw, 8px);
+            backdrop-filter: blur(10px);
+            min-width: max-content;
+            font-size: min(4vw, 16px);
+        }
+        
+        /* INFO PANEL */
+        #info-panel {
+            position: absolute;
+            top: min(3vw, 20px);
+            right: min(3vw, 20px);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            gap: min(2vw, 10px);
+        }
+        
+        .info-item {
+            background: rgba(20,20,40,0.85);
+            padding: min(2vw, 12px) min(3vw, 20px);
+            border-radius: min(3vw, 20px);
+            border: min(0.4vw, 2px) solid #3b82f6;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            font-size: min(3.5vw, 14px);
+        }
+        
+        /* ROOM INFO */
+        #room-info {
+            position: absolute;
+            top: min(3vw, 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            display: none;
+            background: rgba(20,20,40,0.85);
+            padding: min(2vw, 12px) min(3vw, 20px);
+            border-radius: min(3vw, 20px);
+            border: min(0.4vw, 2px) solid #10b981;
+            backdrop-filter: blur(10px);
+            font-size: min(3.5vw, 14px);
+            text-align: center;
+        }
+        
+        /* PLAYER LIST */
+        #player-list {
+            position: absolute;
+            bottom: min(20vw, 120px);
+            right: min(3vw, 20px);
+            z-index: 50;
+            display: none;
+            background: rgba(20,20,40,0.9);
+            padding: min(2vw, 12px);
+            border-radius: min(2vw, 15px);
+            border: min(0.4vw, 2px) solid #3b82f6;
+            backdrop-filter: blur(10px);
+            max-width: min(40vw, 200px);
+            max-height: min(40vw, 200px);
+            overflow-y: auto;
+        }
+        
+        .player-list-item {
+            padding: min(1.5vw, 8px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: min(2vw, 10px);
+            font-size: min(3.5vw, 14px);
+        }
+        
+        .player-color-indicator {
+            width: min(3vw, 12px);
+            height: min(3vw, 12px);
+            border-radius: 50%;
+        }
+        
+        /* MINIMAP */
+        #minimap {
+            position: absolute;
+            bottom: min(3vw, 20px);
+            right: min(3vw, 20px);
+            width: min(25vw, 150px);
+            height: min(25vw, 150px);
+            z-index: 50;
+            display: none;
+            background: rgba(20,20,40,0.9);
+            border-radius: min(2vw, 15px);
+            border: min(0.4vw, 3px) solid #3b82f6;
+            overflow: hidden;
+        }
+        
+        /* MOBILE CONTROLS */
+        #mobile-controls {
+            position: absolute;
+            bottom: min(4vw, 30px);
+            left: 0;
+            right: 0;
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            gap: min(4vw, 25px);
+            padding: 0 min(4vw, 20px);
+        }
+        
+        .mobile-btn {
+            width: min(15vw, 70px);
+            height: min(15vw, 70px);
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            border: min(0.6vw, 3px) solid white;
+            color: white;
+            font-size: min(7vw, 28px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 min(1vw, 4px) min(2vw, 8px) rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        
+        .mobile-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .mobile-btn.shoot {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .mobile-btn.speed {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .mobile-btn.magnet {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        /* AMMO DISPLAY */
+        #ammo-display {
+            position: absolute;
+            bottom: min(25vw, 150px);
+            left: min(3vw, 20px);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            gap: min(1vw, 5px);
+        }
+        
+        .ammo-item {
+            background: rgba(20,20,40,0.85);
+            padding: min(1.5vw, 8px) min(2vw, 12px);
+            border-radius: min(2vw, 12px);
+            border: min(0.3vw, 1.5px) solid #f59e0b;
+            display: flex;
+            align-items: center;
+            gap: min(1.5vw, 8px);
+            backdrop-filter: blur(10px);
+            font-size: min(3.5vw, 14px);
+        }
+        
+        /* DAMAGE INDICATOR */
+        .damage-popup {
+            position: absolute;
+            color: #ef4444;
+            font-weight: bold;
+            font-size: min(4vw, 18px);
+            text-shadow: 0 0 min(1vw, 5px) rgba(255,0,0,0.5);
+            z-index: 60;
+            pointer-events: none;
+            animation: damageFloat 1s ease-out forwards;
+        }
+        
+        @keyframes damageFloat {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        /* COLOR TRANSITION EFFECT */
+        .color-transition {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 30;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+        
+        /* LOADING SCREEN */
+        #loading { 
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999; 
+            background: #000; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: min(5vw, 24px); 
+            gap: min(4vw, 20px); 
+        }
+        
+        .spinner { 
+            width: min(12vw, 50px); 
+            height: min(12vw, 50px); 
+            border: min(1vw, 5px) solid #333; 
+            border-top: min(1vw, 5px) solid #a855f7; 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite; 
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* BUTTON STYLES */
+        .btn {
+            width: 100%;
+            padding: min(3vw, 16px);
+            margin: min(2vw, 10px) 0;
+            border-radius: min(3vw, 15px);
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            font-size: min(4vw, 16px);
+            transition: all 0.2s;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-play {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+        }
+        
+        .btn-mabar {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+        
+        .btn-room {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .btn-exit {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        /* INPUT */
+        input {
+            width: 100%;
+            padding: min(3vw, 15px);
+            margin-bottom: min(3vw, 15px);
+            border-radius: min(2vw, 12px);
+            border: min(0.4vw, 2px) solid #333344;
+            background: rgba(30,30,45,0.8);
+            color: #fff;
+            text-align: center;
+            font-size: min(4vw, 16px);
+        }
+        
+        /* RESPONSIVE TYPOGRAPHY */
+        h1 {
+            font-size: min(7vw, 32px);
+            margin-bottom: min(3vw, 15px);
+            color: #a855f7;
+            text-shadow: 0 0 min(2vw, 20px) rgba(168,85,247,0.7);
+        }
+        
+        h2 {
+            font-size: min(5vw, 24px);
+            margin-bottom: min(3vw, 15px);
+            color: #a855f7;
+        }
+        
+        /* ANIMASI */
+        @keyframes colorFlash {
+            0% { opacity: 0; }
+            50% { opacity: 0.7; }
+            100% { opacity: 0; }
+        }
+        
+        .color-flash {
+            animation: colorFlash 2s ease-out;
+        }
+        
+        /* SHOOT COOLDOWN INDICATOR */
+        .cooldown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            display: none;
+        }
+        
+        /* STATUS MESSAGES */
+        .status-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: min(4vw, 20px) min(6vw, 30px);
+            border-radius: min(3vw, 15px);
+            font-size: min(4vw, 18px);
+            text-align: center;
+            z-index: 200;
+            border: min(0.4vw, 2px) solid #a855f7;
+            box-shadow: 0 0 min(3vw, 20px) rgba(168,85,247,0.5);
+            max-width: 80vw;
+        }
+        
+        /* CHAT SYSTEM */
+        #chat-container {
+            position: absolute;
+            bottom: min(20vw, 120px);
+            left: min(3vw, 20px);
+            z-index: 50;
+            display: none;
+            width: min(40vw, 250px);
+            max-height: min(30vw, 150px);
+            background: rgba(20,20,40,0.9);
+            border-radius: min(2vw, 12px);
+            border: min(0.4vw, 2px) solid #10b981;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        #chat-messages {
+            height: min(20vw, 100px);
+            overflow-y: auto;
+            padding: min(2vw, 10px);
+            font-size: min(3vw, 12px);
+        }
+        
+        .chat-message {
+            margin-bottom: min(1vw, 5px);
+            padding: min(1vw, 5px);
+            border-radius: min(1vw, 5px);
+            background: rgba(255,255,255,0.1);
+            word-break: break-word;
+        }
+        
+        #chat-input-container {
+            display: flex;
+            padding: min(2vw, 10px);
+            gap: min(1vw, 5px);
+        }
+        
+        #chat-input {
+            flex: 1;
+            padding: min(1.5vw, 8px);
+            border-radius: min(1vw, 5px);
+            border: 1px solid #444;
+            background: rgba(30,30,45,0.8);
+            color: white;
+            font-size: min(3vw, 12px);
+        }
+        
+        #chat-send {
+            padding: min(1.5vw, 8px) min(2vw, 12px);
+            border-radius: min(1vw, 5px);
+            border: none;
+            background: #10b981;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: min(3vw, 12px);
+        }
+        
+        #chat-toggle {
+            position: absolute;
+            bottom: min(20vw, 120px);
+            left: min(3vw, 20px);
+            width: min(10vw, 40px);
+            height: min(10vw, 40px);
+            border-radius: 50%;
+            background: #10b981;
+            border: none;
+            color: white;
+            font-size: min(5vw, 20px);
+            cursor: pointer;
+            z-index: 51;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 min(2vw, 8px) rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- PESAN ORIENTASI -->
+    <div id="orientation-message">
+        <div style="padding: 20px;">
+            <div style="font-size: 32px; margin-bottom: 20px;">🔄</div>
+            <h2>Putar HP ke Posisi Landscape!</h2>
+            <p style="margin-top: 20px; color: #aaa;">Game ini dirancang untuk dimainkan dalam mode landscape</p>
+        </div>
+    </div>
+    
+    <!-- LOADING -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Loading Game...</p>
+    </div>
+    
+    <!-- CANVAS GAME -->
+    <canvas id="game"></canvas>
+    
+    <!-- EFFECT TRANSISI WARNA -->
+    <div id="color-transition" class="color-transition"></div>
+    
+    <!-- UI MENU -->
+    <div id="ui-layer">
+        <div class="panel">
+            <h1>🔫 CACING MABAR</h1>
+            <input type="text" id="nick" placeholder="Nama Player" value="Player" maxlength="12">
+            <button class="btn btn-play" onclick="Game.startSolo()">🎮 MAIN SOLO</button>
+            <button class="btn btn-mabar" onclick="Room.show()">👥 MABAR LAN</button>
+            <div style="margin-top: min(4vw, 20px); color: #f59e0b; font-size: min(3.5vw, 14px); text-align: left; padding: 0 min(2vw, 10px);">
+                <div>🎯 Makan makanan untuk skor & peluru</div>
+                <div>🔫 Tekan tombol TEMBAK untuk serang</div>
+                <div>👥 Mabar dengan teman 1 WiFi</div>
+                <div>🌈 Warna berubah setiap 15.000 skor</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ROOM MENU -->
+    <div id="room-layer">
+        <div class="panel">
+            <h2>👥 MABAR LAN</h2>
+            <input type="text" id="room-id" placeholder="Kode Room (4 digit)" maxlength="4" pattern="[0-9]{4}">
+            <button class="btn btn-room" onclick="Room.join()">✅ GABUNG ROOM</button>
+            <button class="btn btn-room" onclick="Room.create()">🆕 BUAT ROOM</button>
+            <button class="btn btn-exit" onclick="Room.hide()">⬅️ KEMBALI</button>
+            <div id="room-status" style="margin-top: min(3vw, 15px); color: #aaa; font-size: min(3.5vw, 14px);"></div>
+            <div style="margin-top: min(3vw, 15px); color: #3b82f6; font-size: min(3vw, 12px);">
+                🤝 Main dengan teman dalam 1 WiFi!<br>
+                Buat room dan beri kode ke temanmu.
+            </div>
+        </div>
+    </div>
+    
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-item">🎯 <span id="score">0</span></div>
+        <div class="hud-item">🪙 <span id="coins">0</span></div>
+        <div class="hud-item">❤️ <span id="health">100</span>%</div>
+        <div class="hud-item">🌈 <span id="color-level">1</span></div>
+    </div>
+    
+    <!-- ROOM INFO -->
+    <div id="room-info">
+        🎮 ROOM: <span id="room-code">----</span>
+    </div>
+    
+    <!-- INFO PANEL -->
+    <div id="info-panel">
+        <div class="info-item">
+            <div>Level: <span id="current-color">Ungu</span></div>
+            <div style="font-size: min(3vw, 12px); color: #aaa;">Next: <span id="next-at">15.000</span></div>
+        </div>
+        <div class="info-item" style="border-color: #ef4444;">
+            <div>⚔️ Kekuatan: <span id="power">100%</span></div>
+        </div>
+    </div>
+    
+    <!-- PLAYER LIST -->
+    <div id="player-list">
+        <h4 style="margin-bottom: min(2vw, 10px); color: #3b82f6; font-size: min(3.5vw, 14px);">👥 PEMAIN:</h4>
+        <div id="players-container"></div>
+    </div>
+    
+    <!-- AMMO DISPLAY -->
+    <div id="ammo-display">
+        <!-- Ammo items akan diisi oleh JavaScript -->
+    </div>
+    
+    <!-- MINIMAP -->
+    <div id="minimap">
+        <canvas id="minimap-canvas"></canvas>
+    </div>
+    
+    <!-- CHAT SYSTEM -->
+    <button id="chat-toggle" onclick="Chat.toggle()">💬</button>
+    <div id="chat-container">
+        <div id="chat-messages"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Pesan..." maxlength="80">
+            <button id="chat-send" onclick="Chat.send()">➤</button>
+        </div>
+    </div>
+    
+    <!-- MOBILE CONTROLS -->
+    <div id="mobile-controls">
+        <div class="mobile-btn shoot" onclick="shoot()" id="shoot-btn">
+            🔫
+            <div class="cooldown-overlay" id="shoot-cooldown"></div>
+        </div>
+        <div class="mobile-btn speed" onclick="activateSpeed()">⚡</div>
+        <div class="mobile-btn magnet" onclick="activateMagnet()">🧲</div>
+        <div class="mobile-btn" onclick="pauseGame()">⏸️</div>
+    </div>
+
+    <!-- PEERJS SCRIPT -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+
+    <script>
+        // ==================== KONFIGURASI ====================
+        const CONFIG = {
+            WORLD_SIZE: 30000,
+            FOOD_COUNT: 300,
+            BOT_COUNT: 15,
+            PLAYER_SIZE: 30,
+            MAX_SEGMENTS: 80,
+            COLLISION_DISTANCE: 40,
+            SHOOT_COOLDOWN: 800,
+            BOT_SHOOT_COOLDOWN: 3000,
+            PROJECTILE_SPEED: 12,
+            PROJECTILE_LIFETIME: 100,
+            DAMAGE_PER_HIT: 10,
+            HEALTH_REGEN_RATE: 0.1,
+            
+            FOOD_TYPES: [
+                {icon: '🍎', value: 100, color: '#ef4444', ammoType: 'fire', damage: 15},
+                {icon: '🍕', value: 200, color: '#f97316', ammoType: 'fire', damage: 20},
+                {icon: '🍔', value: 150, color: '#f59e0b', ammoType: 'normal', damage: 10},
+                {icon: '🍟', value: 80, color: '#fbbf24', ammoType: 'normal', damage: 8},
+                {icon: '🍩', value: 120, color: '#ec4899', ammoType: 'special', damage: 25},
+                {icon: '🍗', value: 180, color: '#dc2626', ammoType: 'fire', damage: 18},
+                {icon: '🧀', value: 90, color: '#fbbf24', ammoType: 'normal', damage: 9},
+                {icon: '🥓', value: 160, color: '#ef4444', ammoType: 'fire', damage: 16},
+                {icon: '🥩', value: 220, color: '#dc2626', ammoType: 'fire', damage: 22},
+                {icon: '🌭', value: 110, color: '#f97316', ammoType: 'normal', damage: 11},
+                {icon: '🍣', value: 250, color: '#ef4444', ammoType: 'special', damage: 30},
+                {icon: '🍜', value: 140, color: '#f59e0b', ammoType: 'normal', damage: 14}
+            ],
+            
+            BOT_NAMES: ['Bot-Alpha','Bot-Beta','Bot-Gamma','Bot-Delta','Bot-Epsilon','Bot-Zeta','Bot-Eta','Bot-Theta'],
+            
+            COLOR_LEVELS: [
+                {score: 0, name: "Ungu", color: "#a855f7", nextAt: 15000},
+                {score: 15000, name: "Biru", color: "#3b82f6", nextAt: 30000},
+                {score: 30000, name: "Hijau", color: "#10b981", nextAt: 45000},
+                {score: 45000, name: "Kuning", color: "#f59e0b", nextAt: 60000},
+                {score: 60000, name: "Merah", color: "#ef4444", nextAt: 75000},
+                {score: 75000, name: "Pink", color: "#ec4899", nextAt: 90000},
+                {score: 90000, name: "Cyan", color: "#06b6d4", nextAt: 105000},
+                {score: 105000, name: "Rainbow", color: "rainbow", nextAt: 120000},
+                {score: 120000, name: "Gold", color: "gold", nextAt: 135000},
+                {score: 135000, name: "Galaxy", color: "galaxy", nextAt: 150000},
+                {score: 150000, name: "UNLIMITED", color: "changing", nextAt: Infinity}
+            ],
+            
+            AMMO_TYPES: {
+                normal: {color: "#3b82f6", speed: 12, size: 8},
+                fire: {color: "#ef4444", speed: 15, size: 10},
+                special: {color: "#8b5cf6", speed: 18, size: 12}
+            }
+        };
+
+        // ==================== STATE ====================
+        const GameState = {
+            active: false,
+            paused: false,
+            mode: 'menu', // 'solo', 'multi'
+            player: null,
+            foods: [],
+            bots: [],
+            projectiles: [],
+            players: new Map(), // Untuk multiplayer
+            cam: { x: 0, y: 0 },
+            coins: 0,
+            colorLevel: 0,
+            particles: [],
+            ammo: {
+                normal: 30,
+                fire: 15,
+                special: 8
+            },
+            lastShootTime: 0,
+            playerHealth: 100,
+            shootCooldown: false,
+            
+            // Multiplayer
+            peer: null,
+            conn: null,
+            roomId: null,
+            isHost: false,
+            lastUpdate: 0
+        };
+
+        // ==================== PROJECTILE CLASS ====================
+        class Projectile {
+            constructor(x, y, angle, type, owner, damage) {
+                this.x = x;
+                this.y = y;
+                this.angle = angle;
+                this.type = type;
+                this.owner = owner;
+                this.damage = damage;
+                this.speed = CONFIG.AMMO_TYPES[type].speed;
+                this.radius = CONFIG.AMMO_TYPES[type].size;
+                this.color = CONFIG.AMMO_TYPES[type].color;
+                this.life = CONFIG.PROJECTILE_LIFETIME;
+                this.id = Math.random().toString(36).substr(2, 9);
+            }
+            
+            update() {
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+                this.life--;
+                return this.life > 0;
+            }
+            
+            draw(ctx) {
+                const screenX = this.x - GameState.cam.x + ctx.canvas.width/2;
+                const screenY = this.y - GameState.cam.y + ctx.canvas.height/2;
+                
+                // Draw dengan glow
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core yang lebih terang
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, this.radius * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // ==================== PARTICLE SYSTEM ====================
+        class Particle {
+            constructor(x, y, color, type = 'normal') {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.type = type;
+                this.size = type === 'damage' ? Math.random() * 6 + 4 : Math.random() * 8 + 3;
+                this.speedX = Math.random() * 8 - 4;
+                this.speedY = Math.random() * 8 - 4;
+                this.life = 1.0;
+                this.gravity = type === 'damage' ? 0.1 : 0;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += this.gravity;
+                this.size *= 0.92;
+                this.life -= 0.02;
+                return this.life > 0;
+            }
+            
+            draw(ctx) {
+                const screenX = this.x - GameState.cam.x + ctx.canvas.width/2;
+                const screenY = this.y - GameState.cam.y + ctx.canvas.height/2;
+                
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // ==================== SNAKE CLASS DENGAN MULUT EKSPRESIF ====================
+        class RainbowSnake {
+            constructor(x, y, name, color, isBot = false) {
+                this.id = Math.random().toString(36).substr(2, 9);
+                this.x = x;
+                this.y = y;
+                this.name = name;
+                this.color = color;
+                this.isBot = isBot;
+                this.angle = Math.random() * Math.PI * 2;
+                this.targetAngle = this.angle;
+                this.speed = isBot ? 3.5 : 5;
+                this.radius = CONFIG.PLAYER_SIZE;
+                this.score = 0;
+                this.health = 100;
+                this.maxHealth = 100;
+                this.segments = [];
+                this.segmentCount = isBot ? 25 : 35;
+                this.mouthState = 'normal'; // normal, eating, hurt, happy
+                this.mouthTimer = 0;
+                this.lastActionTime = Date.now();
+                
+                // Inisialisasi segment
+                for(let i = 0; i < this.segmentCount; i++) {
+                    this.segments.push({ 
+                        x: this.x, 
+                        y: this.y,
+                        size: this.radius * (0.4 + (i / this.segmentCount) * 0.6)
+                    });
+                }
+            }
+
+            update() {
+                // Update mulut state
+                this.mouthTimer++;
+                if (this.mouthTimer > 60) {
+                    this.mouthState = 'normal';
+                    this.mouthTimer = 0;
+                }
+                
+                // Smooth angle rotation
+                let angleDiff = this.targetAngle - this.angle;
+                while(angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while(angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                this.angle += angleDiff * 0.15;
+                
+                // Move
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+                
+                // World boundaries
+                const max = CONFIG.WORLD_SIZE / 2;
+                if(Math.abs(this.x) > max - 500) this.targetAngle += Math.PI * 0.5;
+                if(Math.abs(this.y) > max - 500) this.targetAngle += Math.PI * 0.5;
+                
+                // Update segments
+                this.segments[0].x = this.x;
+                this.segments[0].y = this.y;
+                
+                for(let i = 1; i < this.segments.length; i++) {
+                    const prev = this.segments[i-1];
+                    const curr = this.segments[i];
+                    
+                    const dx = prev.x - curr.x;
+                    const dy = prev.y - curr.y;
+                    const dist = Math.hypot(dx, dy);
+                    
+                    if(dist > 10) {
+                        const moveX = dx * 0.25;
+                        const moveY = dy * 0.25;
+                        curr.x += moveX;
+                        curr.y += moveY;
+                        curr.size = this.radius * (0.4 + ((this.segments.length - i) / this.segments.length) * 0.6);
+                    }
+                }
+            }
+
+            draw(ctx) {
+                const screenX = this.x - GameState.cam.x + ctx.canvas.width/2;
+                const screenY = this.y - GameState.cam.y + ctx.canvas.height/2;
+                
+                // Draw segments dari ekor ke kepala
+                for(let i = this.segments.length - 1; i >= 0; i--) {
+                    const seg = this.segments[i];
+                    const segScreenX = seg.x - GameState.cam.x + ctx.canvas.width/2;
+                    const segScreenY = seg.y - GameState.cam.y + ctx.canvas.height/2;
+                    
+                    // Draw segment dengan glow
+                    ctx.shadowColor = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(segScreenX, segScreenY, seg.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Border
+                    ctx.shadowBlur = 5;
+                    ctx.strokeStyle = "#000";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Draw wajah hanya di kepala
+                    if(i === 0) {
+                        this.drawFace(ctx, segScreenX, segScreenY, seg.size);
+                        this.drawInfo(ctx, segScreenX, segScreenY, seg.size);
+                    }
+                }
+                ctx.shadowBlur = 0;
+            }
+
+            drawFace(ctx, x, y, size) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(this.angle);
+                
+                // Mata
+                ctx.fillStyle = "#fff";
+                ctx.beginPath();
+                ctx.arc(22, -10, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(22, 10, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Pupil dengan ekspresi
+                let pupilOffsetX = 0;
+                let pupilOffsetY = 0;
+                
+                if (this.mouthState === 'eating') {
+                    pupilOffsetX = 2;
+                } else if (this.mouthState === 'hurt') {
+                    pupilOffsetY = -2;
+                } else if (this.mouthState === 'happy') {
+                    pupilOffsetX = -1;
+                    pupilOffsetY = -1;
+                }
+                
+                ctx.fillStyle = "#000";
+                ctx.beginPath();
+                ctx.arc(25 + pupilOffsetX, -8 + pupilOffsetY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(25 + pupilOffsetX, 12 + pupilOffsetY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Kilau mata
+                ctx.fillStyle = "#fff";
+                ctx.beginPath();
+                ctx.arc(23 + pupilOffsetX, -9 + pupilOffsetY, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(23 + pupilOffsetX, 11 + pupilOffsetY, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // MULUT EKSPRESIF BERDASARKAN STATE
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 3;
+                ctx.lineCap = "round";
+                
+                if (this.mouthState === 'normal') {
+                    // Mulut senyum normal
+                    ctx.beginPath();
+                    ctx.arc(18, 0, 12, 0.2, Math.PI - 0.2);
+                    ctx.stroke();
+                } else if (this.mouthState === 'eating') {
+                    // Mulut terbuka lebar (makan)
+                    ctx.beginPath();
+                    ctx.arc(18, 0, 15, 0.1, Math.PI - 0.1);
+                    ctx.stroke();
+                    
+                    // Lidah
+                    ctx.fillStyle = "#ff6b8b";
+                    ctx.beginPath();
+                    ctx.ellipse(10, 5, 8, 4, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (this.mouthState === 'hurt') {
+                    // Mulut teriak (kesakitan)
+                    ctx.beginPath();
+                    ctx.moveTo(10, -5);
+                    ctx.lineTo(26, -5);
+                    ctx.moveTo(10, 5);
+                    ctx.lineTo(26, 5);
+                    ctx.stroke();
+                    
+                    // Gigi atas
+                    ctx.fillStyle = "#fff";
+                    for(let i = 0; i < 3; i++) {
+                        ctx.fillRect(12 + i * 4, -7, 2, 3);
+                    }
+                    // Gigi bawah
+                    for(let i = 0; i < 3; i++) {
+                        ctx.fillRect(12 + i * 4, 4, 2, 3);
+                    }
+                } else if (this.mouthState === 'happy') {
+                    // Mulut senyum lebar (bahagia)
+                    ctx.beginPath();
+                    ctx.arc(18, 5, 10, 0.3, Math.PI - 0.3);
+                    ctx.stroke();
+                    
+                    // Mata menyipit
+                    ctx.fillStyle = "#000";
+                    ctx.beginPath();
+                    ctx.ellipse(24, -8, 3, 5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(24, 10, 3, 5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+            
+            setMouthState(state, duration = 60) {
+                this.mouthState = state;
+                this.mouthTimer = 0;
+            }
+            
+            drawInfo(ctx, x, y, size) {
+                if (this.isBot) return;
+                
+                // Health bar background
+                const barWidth = 80;
+                const barHeight = 8;
+                const barX = x - barWidth/2;
+                const barY = y - size - 50;
+                
+                // Background
+                ctx.fillStyle = "rgba(0,0,0,0.5)";
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                
+                // Health fill
+                const healthPercent = this.health / this.maxHealth;
+                ctx.fillStyle = healthPercent > 0.5 ? "#10b981" : 
+                                healthPercent > 0.25 ? "#f59e0b" : "#ef4444";
+                ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+                
+                // Border
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(barX, barY, barWidth, barHeight);
+                
+                // Nama
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 16px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(this.name, x, y - size - 65);
+                
+                // Skor
+                ctx.font = "14px Arial";
+                ctx.fillStyle = "#f59e0b";
+                ctx.fillText(`${this.score.toLocaleString()}`, x, y - size - 80);
+            }
+            
+            takeDamage(damage) {
+                this.health -= damage;
+                this.setMouthState('hurt', 45);
+                
+                // Create damage particles
+                for(let i = 0; i < 5; i++) {
+                    GameState.particles.push(new Particle(
+                        this.x,
+                        this.y,
+                        '#ef4444',
+                        'damage'
+                    ));
+                }
+                
+                showDamagePopup(this.x, this.y, `-${damage}`);
+                
+                return this.health <= 0;
+            }
+            
+            eatFood() {
+                this.setMouthState('eating', 30);
+            }
+            
+            scoreBonus() {
+                this.setMouthState('happy', 45);
+            }
+        }
+
+        // ==================== GAME SYSTEM ====================
+        const Game = {
+            startSolo() {
+                console.log("Starting solo game...");
+                
+                const nick = document.getElementById('nick').value.trim() || "Player";
+                
+                // Reset game state
+                GameState.active = true;
+                GameState.paused = false;
+                GameState.mode = 'solo';
+                GameState.player = null;
+                GameState.foods = [];
+                GameState.bots = [];
+                GameState.projectiles = [];
+                GameState.coins = 0;
+                GameState.colorLevel = 0;
+                GameState.particles = [];
+                GameState.ammo = { normal: 30, fire: 15, special: 8 };
+                GameState.playerHealth = 100;
+                GameState.lastShootTime = 0;
+                GameState.shootCooldown = false;
+                
+                // Create player
+                const color = CONFIG.COLOR_LEVELS[0].color === "rainbow" ? 
+                    `hsl(${Math.random() * 360}, 100%, 60%)` : 
+                    CONFIG.COLOR_LEVELS[0].color;
+                GameState.player = new RainbowSnake(0, 0, nick, color);
+                
+                // Create bots
+                for(let i = 0; i < CONFIG.BOT_COUNT; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = 2000 + Math.random() * 5000;
+                    const bot = new RainbowSnake(
+                        Math.cos(angle) * dist,
+                        Math.sin(angle) * dist,
+                        CONFIG.BOT_NAMES[i % CONFIG.BOT_NAMES.length],
+                        `hsl(${Math.random() * 360}, 70%, 60%)`,
+                        true
+                    );
+                    bot.score = Math.floor(Math.random() * 5000);
+                    bot.health = 80 + Math.random() * 40;
+                    GameState.bots.push(bot);
+                }
+                
+                // Generate food
+                this.generateFood();
+                
+                // Update ammo display
+                updateAmmoDisplay();
+                
+                // Show game UI
+                this.showGameUI();
+                
+                // Start game loop
+                this.loop();
+                
+                showMessage("🎮 Game Solo Dimulai!\n\n🔫 Tekan tombol TEMBAK\n🍎 Makan makanan untuk peluru", 3000);
+            },
+            
+            startMultiplayer(nick, isHost) {
+                console.log("Starting multiplayer game...");
+                
+                GameState.active = true;
+                GameState.paused = false;
+                GameState.mode = 'multi';
+                
+                // Create player
+                const color = CONFIG.COLOR_LEVELS[0].color === "rainbow" ? 
+                    `hsl(${Math.random() * 360}, 100%, 60%)` : 
+                    CONFIG.COLOR_LEVELS[0].color;
+                GameState.player = new RainbowSnake(0, 0, nick, color);
+                GameState.players.set(GameState.player.id, GameState.player);
+                
+                // Host generates world
+                if (isHost) {
+                    // Create bots
+                    for(let i = 0; i < CONFIG.BOT_COUNT; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = 2000 + Math.random() * 5000;
+                        const bot = new RainbowSnake(
+                            Math.cos(angle) * dist,
+                            Math.sin(angle) * dist,
+                            CONFIG.BOT_NAMES[i % CONFIG.BOT_NAMES.length],
+                            `hsl(${Math.random() * 360}, 70%, 60%)`,
+                            true
+                        );
+                        bot.score = Math.floor(Math.random() * 5000);
+                        bot.health = 80 + Math.random() * 40;
+                        GameState.bots.push(bot);
+                    }
+                    
+                    // Generate food
+                    this.generateFood();
+                    
+                    // Broadcast game state periodically
+                    setInterval(() => {
+                        if (GameState.conn && GameState.isHost) {
+                            this.broadcastGameState();
+                        }
+                    }, 100);
+                }
+                
+                // Update ammo display
+                updateAmmoDisplay();
+                
+                // Show game UI
+                this.showGameUI();
+                
+                // Start game loop
+                this.loop();
+                
+                showMessage(`👥 Game Mabar Dimulai!\n🎮 Room: ${GameState.roomId}\n\n🔫 Main dengan temanmu!`, 3000);
+            },
+            
+            showGameUI() {
+                document.getElementById('ui-layer').style.display = 'none';
+                document.getElementById('hud').style.display = 'flex';
+                document.getElementById('info-panel').style.display = 'flex';
+                document.getElementById('minimap').style.display = 'block';
+                document.getElementById('mobile-controls').style.display = 'flex';
+                document.getElementById('ammo-display').style.display = 'flex';
+                document.getElementById('chat-toggle').style.display = 'flex';
+                
+                if (GameState.mode === 'multi') {
+                    document.getElementById('room-info').style.display = 'block';
+                    document.getElementById('room-code').textContent = GameState.roomId;
+                    document.getElementById('player-list').style.display = 'block';
+                    this.updatePlayerList();
+                }
+                
+                updateColorInfo();
+            },
+            
+            generateFood() {
+                GameState.foods = [];
+                for(let i = 0; i < CONFIG.FOOD_COUNT; i++) {
+                    const foodType = CONFIG.FOOD_TYPES[Math.floor(Math.random() * CONFIG.FOOD_TYPES.length)];
+                    GameState.foods.push({
+                        x: (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                        y: (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                        icon: foodType.icon,
+                        value: foodType.value,
+                        color: foodType.color,
+                        ammoType: foodType.ammoType,
+                        damage: foodType.damage,
+                        size: 18 + Math.random() * 12
+                    });
+                }
+            },
+            
+            loop() {
+                if(!GameState.active || GameState.paused) return;
+                
+                const canvas = document.getElementById('game');
+                const ctx = canvas.getContext('2d');
+                
+                // Clear canvas
+                ctx.fillStyle = '#050510';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Update camera
+                if (GameState.player) {
+                    GameState.cam.x += (GameState.player.x - GameState.cam.x) * 0.08;
+                    GameState.cam.y += (GameState.player.y - GameState.cam.y) * 0.08;
+                    
+                    // Regenerate health
+                    if (GameState.playerHealth < 100) {
+                        GameState.playerHealth = Math.min(100, GameState.playerHealth + CONFIG.HEALTH_REGEN_RATE);
+                    }
+                }
+                
+                // Update game state
+                this.updateEntities();
+                
+                // Draw grid
+                this.drawGrid(ctx);
+                
+                // Draw food
+                this.drawFood(ctx);
+                
+                // Draw projectiles
+                this.drawProjectiles(ctx);
+                
+                // Draw particles
+                this.drawParticles(ctx);
+                
+                // Draw bots
+                GameState.bots.forEach(bot => bot.draw(ctx));
+                
+                // Draw other players
+                GameState.players.forEach(player => {
+                    if(player.id !== GameState.player.id) {
+                        player.draw(ctx);
+                    }
+                });
+                
+                // Draw player
+                if (GameState.player) {
+                    GameState.player.draw(ctx);
+                }
+                
+                // Update minimap
+                this.updateMinimap();
+                
+                // Update HUD
+                this.updateHUD();
+                
+                // Update shoot cooldown
+                updateShootCooldown();
+                
+                // Network sync for multiplayer
+                if(GameState.mode === 'multi' && GameState.conn && Date.now() - GameState.lastUpdate > 50) {
+                    this.sendPlayerUpdate();
+                    GameState.lastUpdate = Date.now();
+                }
+                
+                // Continue loop
+                requestAnimationFrame(() => this.loop());
+            },
+            
+            updateEntities() {
+                if (!GameState.player) return;
+                
+                // Update player
+                GameState.player.update();
+                GameState.player.health = GameState.playerHealth;
+                
+                // Update bots
+                this.updateBots();
+                
+                // Update projectiles
+                this.updateProjectiles();
+                
+                // Player eats food
+                GameState.foods.forEach((food, index) => {
+                    const dist = Math.hypot(GameState.player.x - food.x, GameState.player.y - food.y);
+                    if(dist < CONFIG.COLLISION_DISTANCE) {
+                        // Add score and coins
+                        GameState.player.score += food.value;
+                        GameState.coins += Math.floor(food.value / 10);
+                        
+                        // Add ammo
+                        if (GameState.ammo[food.ammoType] < 100) {
+                            GameState.ammo[food.ammoType] += 2;
+                        }
+                        
+                        // Player eating animation
+                        GameState.player.eatFood();
+                        
+                        // Create particles
+                        for(let i = 0; i < 5; i++) {
+                            GameState.particles.push(new Particle(
+                                food.x,
+                                food.y,
+                                food.color
+                            ));
+                        }
+                        
+                        // Replace food
+                        GameState.foods[index] = this.createFood();
+                        
+                        // Check for color level up
+                        checkColorLevelUp();
+                        
+                        // Update ammo display
+                        updateAmmoDisplay();
+                        
+                        // Broadcast in multiplayer
+                        if (GameState.mode === 'multi' && GameState.isHost) {
+                            this.broadcastFoodUpdate(index, GameState.foods[index]);
+                        }
+                    }
+                });
+                
+                // Player eats bot
+                GameState.bots.forEach((bot, index) => {
+                    const dist = Math.hypot(GameState.player.x - bot.x, GameState.player.y - bot.y);
+                    if(dist < CONFIG.COLLISION_DISTANCE * 1.2) {
+                        // Big bonus
+                        const bonus = bot.score * 3;
+                        GameState.player.score += bonus;
+                        GameState.coins += Math.floor(bot.score / 2);
+                        
+                        // Player happy animation
+                        GameState.player.scoreBonus();
+                        
+                        // Add ammo
+                        GameState.ammo.normal = Math.min(100, GameState.ammo.normal + 10);
+                        GameState.ammo.fire = Math.min(50, GameState.ammo.fire + 5);
+                        
+                        // Create particles
+                        for(let i = 0; i < 20; i++) {
+                            GameState.particles.push(new Particle(
+                                bot.x,
+                                bot.y,
+                                `hsl(${Math.random() * 360}, 100%, 60%)`
+                            ));
+                        }
+                        
+                        // Respawn bot
+                        const angle = Math.random() * Math.PI * 2;
+                        const distRespawn = 3000 + Math.random() * 5000;
+                        bot.x = Math.cos(angle) * distRespawn;
+                        bot.y = Math.sin(angle) * distRespawn;
+                        bot.score = Math.floor(Math.random() * 5000);
+                        bot.health = 80 + Math.random() * 40;
+                        
+                        checkColorLevelUp();
+                        updateAmmoDisplay();
+                    }
+                });
+                
+                // Update particles
+                GameState.particles = GameState.particles.filter(p => p.update());
+            },
+            
+            updateBots() {
+                GameState.bots.forEach((bot, index) => {
+                    bot.update();
+                    
+                    // Bot AI: shoot at player
+                    if (Math.random() < 0.005 && GameState.player) {
+                        const distToPlayer = Math.hypot(bot.x - GameState.player.x, bot.y - GameState.player.y);
+                        if (distToPlayer < 1000) {
+                            const angle = Math.atan2(GameState.player.y - bot.y, GameState.player.x - bot.x);
+                            const projectile = new Projectile(
+                                bot.x,
+                                bot.y,
+                                angle,
+                                'normal',
+                                bot.id,
+                                10
+                            );
+                            GameState.projectiles.push(projectile);
+                        }
+                    }
+                    
+                    // Bot AI: move randomly
+                    if (Math.random() < 0.01) {
+                        bot.targetAngle += (Math.random() - 0.5) * Math.PI;
+                    }
+                    
+                    // Bot eats food
+                    GameState.foods.forEach((food, foodIndex) => {
+                        const dist = Math.hypot(bot.x - food.x, bot.y - food.y);
+                        if(dist < CONFIG.COLLISION_DISTANCE) {
+                            bot.score += food.value;
+                            bot.health = Math.min(bot.maxHealth, bot.health + 5);
+                            bot.eatFood();
+                            
+                            GameState.foods[foodIndex] = this.createFood();
+                        }
+                    });
+                });
+            },
+            
+            updateProjectiles() {
+                GameState.projectiles = GameState.projectiles.filter(proj => {
+                    if (!proj.update()) return false;
+                    
+                    // Check collision with player
+                    if (proj.owner !== 'player' && GameState.player) {
+                        const dist = Math.hypot(proj.x - GameState.player.x, proj.y - GameState.player.y);
+                        if (dist < GameState.player.radius + proj.radius) {
+                            const died = GameState.player.takeDamage(proj.damage);
+                            GameState.playerHealth = GameState.player.health;
+                            
+                            if (died) {
+                                this.gameOver("💀 Anda ditembak!");
+                            }
+                            return false;
+                        }
+                    }
+                    
+                    // Check collision with bots
+                    if (proj.owner === 'player') {
+                        for (let i = 0; i < GameState.bots.length; i++) {
+                            const bot = GameState.bots[i];
+                            const dist = Math.hypot(proj.x - bot.x, proj.y - bot.y);
+                            if (dist < bot.radius + proj.radius) {
+                                const died = bot.takeDamage(proj.damage);
+                                
+                                if (!died) {
+                                    GameState.player.score += proj.damage * 10;
+                                    GameState.coins += Math.floor(proj.damage);
+                                } else {
+                                    GameState.player.score += bot.score;
+                                    GameState.coins += Math.floor(bot.score / 2);
+                                    GameState.player.scoreBonus();
+                                    
+                                    // Respawn bot
+                                    const angle = Math.random() * Math.PI * 2;
+                                    const distRespawn = 3000 + Math.random() * 5000;
+                                    bot.x = Math.cos(angle) * distRespawn;
+                                    bot.y = Math.sin(angle) * distRespawn;
+                                    bot.score = Math.floor(Math.random() * 5000);
+                                    bot.health = 80 + Math.random() * 40;
+                                }
+                                
+                                checkColorLevelUp();
+                                return false;
+                            }
+                        }
+                    }
+                    
+                    // Check collision with other players (multiplayer)
+                    if (proj.owner !== 'player' && GameState.mode === 'multi') {
+                        GameState.players.forEach((player, playerId) => {
+                            if (playerId !== proj.owner) {
+                                const dist = Math.hypot(proj.x - player.x, proj.y - player.y);
+                                if (dist < player.radius + proj.radius) {
+                                    const died = player.takeDamage(proj.damage);
+                                    
+                                    if (died && GameState.isHost) {
+                                        // Respawn player
+                                        player.x = (Math.random() - 0.5) * 2000;
+                                        player.y = (Math.random() - 0.5) * 2000;
+                                        player.health = 100;
+                                    }
+                                    return false;
+                                }
+                            }
+                        });
+                    }
+                    
+                    return true;
+                });
+            },
+            
+            createFood() {
+                const foodType = CONFIG.FOOD_TYPES[Math.floor(Math.random() * CONFIG.FOOD_TYPES.length)];
+                return {
+                    x: (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                    y: (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                    icon: foodType.icon,
+                    value: foodType.value,
+                    color: foodType.color,
+                    ammoType: foodType.ammoType,
+                    damage: foodType.damage,
+                    size: 18 + Math.random() * 12
+                };
+            },
+            
+            drawGrid(ctx) {
+                const gridSize = 300;
+                const offsetX = (GameState.cam.x % gridSize) - gridSize;
+                const offsetY = (GameState.cam.y % gridSize) - gridSize;
+                
+                ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                ctx.lineWidth = 1;
+                
+                for(let x = offsetX; x < ctx.canvas.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, ctx.canvas.height);
+                    ctx.stroke();
+                }
+                for(let y = offsetY; y < ctx.canvas.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(ctx.canvas.width, y);
+                    ctx.stroke();
+                }
+            },
+            
+            drawFood(ctx) {
+                GameState.foods.forEach(food => {
+                    const screenX = food.x - GameState.cam.x + ctx.canvas.width/2;
+                    const screenY = food.y - GameState.cam.y + ctx.canvas.height/2;
+                    
+                    if(screenX < -100 || screenX > ctx.canvas.width + 100 ||
+                       screenY < -100 || screenY > ctx.canvas.height + 100) return;
+                    
+                    ctx.shadowColor = food.color;
+                    ctx.shadowBlur = 20;
+                    ctx.font = `${food.size}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(food.icon, screenX, screenY);
+                    ctx.shadowBlur = 0;
+                });
+            },
+            
+            drawProjectiles(ctx) {
+                GameState.projectiles.forEach(proj => {
+                    proj.draw(ctx);
+                });
+            },
+            
+            drawParticles(ctx) {
+                GameState.particles.forEach(particle => {
+                    particle.draw(ctx);
+                });
+            },
+            
+            updateMinimap() {
+                const canvas = document.getElementById('minimap-canvas');
+                const ctx = canvas.getContext('2d');
+                const size = canvas.parentElement.clientWidth;
+                
+                canvas.width = size;
+                canvas.height = size;
+                
+                ctx.fillStyle = 'rgba(20,20,40,0.9)';
+                ctx.fillRect(0, 0, size, size);
+                
+                const scale = size / CONFIG.WORLD_SIZE;
+                const centerX = size/2;
+                const centerY = size/2;
+                
+                // Draw boundary
+                ctx.strokeStyle = 'rgba(59,130,246,0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, size/2 - 2, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Draw food
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                for(let i = 0; i < Math.min(GameState.foods.length, 100); i += 3) {
+                    const food = GameState.foods[i];
+                    const x = centerX + (food.x * scale);
+                    const y = centerY + (food.y * scale);
+                    if(x >= 0 && x <= size && y >= 0 && y <= size) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, 1, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                
+                // Draw bots
+                ctx.fillStyle = 'rgba(239,68,68,0.8)';
+                GameState.bots.forEach(bot => {
+                    const x = centerX + (bot.x * scale);
+                    const y = centerY + (bot.y * scale);
+                    if(x >= 0 && x <= size && y >= 0 && y <= size) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                
+                // Draw other players
+                ctx.fillStyle = 'rgba(59,130,246,0.8)';
+                GameState.players.forEach(player => {
+                    if(player.id === GameState.player.id) return;
+                    const x = centerX + (player.x * scale);
+                    const y = centerY + (player.y * scale);
+                    if(x >= 0 && x <= size && y >= 0 && y <= size) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                
+                // Draw player
+                if (GameState.player) {
+                    const playerX = centerX + (GameState.player.x * scale);
+                    const playerY = centerY + (GameState.player.y * scale);
+                    
+                    const level = CONFIG.COLOR_LEVELS[GameState.colorLevel];
+                    ctx.fillStyle = level.color === "rainbow" ? 
+                        `hsl(${(Date.now() / 50) % 360}, 100%, 60%)` : 
+                        level.color;
+                    
+                    ctx.beginPath();
+                    ctx.arc(playerX, playerY, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(playerX, playerY);
+                    ctx.lineTo(
+                        playerX + Math.cos(GameState.player.angle) * 6,
+                        playerY + Math.sin(GameState.player.angle) * 6
+                    );
+                    ctx.stroke();
+                }
+            },
+            
+            updateHUD() {
+                if (GameState.player) {
+                    document.getElementById('score').textContent = GameState.player.score.toLocaleString();
+                    document.getElementById('coins').textContent = GameState.coins.toLocaleString();
+                    document.getElementById('health').textContent = Math.floor(GameState.playerHealth);
+                    document.getElementById('color-level').textContent = GameState.colorLevel + 1;
+                    document.getElementById('power').textContent = Math.floor(GameState.playerHealth) + '%';
+                }
+            },
+            
+            updatePlayerList() {
+                const container = document.getElementById('players-container');
+                if(!container) return;
+                
+                container.innerHTML = '';
+                
+                // Add player
+                const playerItem = document.createElement('div');
+                playerItem.className = 'player-list-item';
+                playerItem.innerHTML = `
+                    <div class="player-color-indicator" style="background:${GameState.player.color}"></div>
+                    <div>${GameState.player.name} (Anda)</div>
+                    <div style="margin-left:auto; color:#f59e0b;">${GameState.player.score}</div>
+                `;
+                container.appendChild(playerItem);
+                
+                // Add other players
+                GameState.players.forEach(player => {
+                    if(player.id === GameState.player.id) return;
+                    
+                    const item = document.createElement('div');
+                    item.className = 'player-list-item';
+                    item.innerHTML = `
+                        <div class="player-color-indicator" style="background:${player.color}"></div>
+                        <div>${player.name}</div>
+                        <div style="margin-left:auto; color:#f59e0b;">${player.score}</div>
+                    `;
+                    container.appendChild(item);
+                });
+            },
+            
+            gameOver(reason) {
+                GameState.active = false;
+                
+                setTimeout(() => {
+                    alert(`💀 GAME OVER!\n${reason}\n\nSkor Akhir: ${GameState.player.score.toLocaleString()}\nKoin: ${GameState.coins.toLocaleString()}`);
+                    location.reload();
+                }, 500);
+            },
+            
+            // ==================== MULTIPLAYER FUNCTIONS ====================
+            sendPlayerUpdate() {
+                if(!GameState.conn) return;
+                
+                const data = {
+                    type: 'player_update',
+                    id: GameState.player.id,
+                    x: GameState.player.x,
+                    y: GameState.player.y,
+                    angle: GameState.player.angle,
+                    score: GameState.player.score,
+                    health: GameState.player.health,
+                    name: GameState.player.name,
+                    color: GameState.player.color
+                };
+                
+                try {
+                    GameState.conn.send(data);
+                } catch(e) {
+                    console.error('Failed to send update:', e);
+                }
+            },
+            
+            broadcastGameState() {
+                if(!GameState.isHost || !GameState.conn) return;
+                
+                const data = {
+                    type: 'game_state',
+                    foods: GameState.foods,
+                    bots: GameState.bots.map(bot => ({
+                        x: bot.x, y: bot.y, score: bot.score, name: bot.name, health: bot.health
+                    })),
+                    players: Array.from(GameState.players.values()).map(p => ({
+                        id: p.id, name: p.name, color: p.color,
+                        x: p.x, y: p.y, score: p.score, health: p.health
+                    }))
+                };
+                
+                try {
+                    GameState.conn.send(data);
+                } catch(e) {
+                    console.error('Failed to broadcast state:', e);
+                }
+            },
+            
+            broadcastFoodUpdate(index, food) {
+                if(!GameState.isHost || !GameState.conn) return;
+                
+                const data = {
+                    type: 'food_update',
+                    index: index,
+                    food: food
+                };
+                
+                GameState.conn.send(data);
+            },
+            
+            handleNetworkData(data) {
+                try {
+                    switch(data.type) {
+                        case 'player_update':
+                            if(data.id === GameState.player.id) return;
+                            
+                            let player = GameState.players.get(data.id);
+                            if(!player) {
+                                player = new RainbowSnake(data.x, data.y, data.name, data.color);
+                                player.id = data.id;
+                                GameState.players.set(data.id, player);
+                            }
+                            player.x = data.x;
+                            player.y = data.y;
+                            player.angle = data.angle;
+                            player.score = data.score;
+                            player.health = data.health;
+                            player.name = data.name;
+                            Game.updatePlayerList();
+                            break;
+                            
+                        case 'game_state':
+                            if(GameState.isHost) break;
+                            
+                            // Update foods
+                            data.foods.forEach((food, index) => {
+                                if(GameState.foods[index]) {
+                                    GameState.foods[index] = food;
+                                }
+                            });
+                            
+                            // Update bots
+                            data.bots.forEach((botData, index) => {
+                                if(GameState.bots[index]) {
+                                    GameState.bots[index].x = botData.x;
+                                    GameState.bots[index].y = botData.y;
+                                    GameState.bots[index].score = botData.score;
+                                    GameState.bots[index].name = botData.name;
+                                    GameState.bots[index].health = botData.health;
+                                }
+                            });
+                            
+                            // Update players
+                            data.players.forEach(playerData => {
+                                if(playerData.id === GameState.player.id) return;
+                                
+                                let player = GameState.players.get(playerData.id);
+                                if(!player) {
+                                    player = new RainbowSnake(
+                                        playerData.x,
+                                        playerData.y,
+                                        playerData.name,
+                                        playerData.color
+                                    );
+                                    player.id = playerData.id;
+                                    GameState.players.set(playerData.id, player);
+                                }
+                                player.x = playerData.x;
+                                player.y = playerData.y;
+                                player.score = playerData.score;
+                                player.health = playerData.health;
+                                player.name = playerData.name;
+                            });
+                            Game.updatePlayerList();
+                            break;
+                            
+                        case 'food_update':
+                            if(!GameState.isHost) {
+                                GameState.foods[data.index] = data.food;
+                            }
+                            break;
+                            
+                        case 'chat_message':
+                            Chat.receive(data);
+                            break;
+                            
+                        case 'system_message':
+                            showMessage(data.message, 3000);
+                            break;
+                    }
+                } catch(e) {
+                    console.error('Error processing network data:', e);
+                }
+            }
+        };
+
+        // ==================== ROOM SYSTEM ====================
+        const Room = {
+            show() {
+                document.getElementById('room-layer').style.display = 'flex';
+                document.getElementById('room-id').value = '';
+                document.getElementById('room-status').textContent = '';
+            },
+
+            hide() {
+                document.getElementById('room-layer').style.display = 'none';
+            },
+
+            generateRoomId() {
+                return Math.floor(1000 + Math.random() * 9000).toString();
+            },
+
+            async create() {
+                const nick = document.getElementById('nick').value.trim() || 'Player';
+                const roomId = this.generateRoomId();
+                
+                document.getElementById('room-status').textContent = `Membuat room ${roomId}...`;
+                document.getElementById('room-status').style.color = '#10b981';
+
+                try {
+                    // Initialize PeerJS as host
+                    GameState.peer = new Peer(`host_${roomId}_${Date.now()}`, {
+                        debug: 2
+                    });
+                    
+                    GameState.peer.on('open', (id) => {
+                        GameState.roomId = roomId;
+                        GameState.isHost = true;
+                        
+                        Room.hide();
+                        Game.startMultiplayer(nick, true);
+                        
+                        // Setup connection handler
+                        GameState.peer.on('connection', (conn) => {
+                            this.handleConnection(conn);
+                        });
+                        
+                        console.log('Room created:', roomId);
+                    });
+
+                    GameState.peer.on('error', (err) => {
+                        document.getElementById('room-status').textContent = 'Error: ' + err.message;
+                        document.getElementById('room-status').style.color = '#ef4444';
+                    });
+                } catch(err) {
+                    document.getElementById('room-status').textContent = 'Gagal membuat room!';
+                    document.getElementById('room-status').style.color = '#ef4444';
+                }
+            },
+
+            async join() {
+                const nick = document.getElementById('nick').value.trim() || 'Player';
+                const roomId = document.getElementById('room-id').value.trim();
+                
+                if(roomId.length !== 4 || !/^\d+$/.test(roomId)) {
+                    document.getElementById('room-status').textContent = 'Kode room harus 4 digit angka!';
+                    document.getElementById('room-status').style.color = '#ef4444';
+                    return;
+                }
+
+                document.getElementById('room-status').textContent = 'Menghubungkan ke room ' + roomId + '...';
+                document.getElementById('room-status').style.color = '#10b981';
+
+                try {
+                    // Initialize PeerJS as client
+                    GameState.peer = new Peer(`client_${roomId}_${Date.now()}`, {
+                        debug: 2
+                    });
+                    
+                    GameState.peer.on('open', async (id) => {
+                        try {
+                            // Connect to host
+                            const conn = GameState.peer.connect(`host_${roomId}_${Date.now() - 10000}`);
+                            
+                            conn.on('open', () => {
+                                GameState.conn = conn;
+                                GameState.roomId = roomId;
+                                GameState.isHost = false;
+                                
+                                Room.hide();
+                                Game.startMultiplayer(nick, false);
+                                
+                                // Setup message handler
+                                conn.on('data', (data) => {
+                                    Game.handleNetworkData(data);
+                                });
+                                
+                                // Send join message
+                                conn.send({
+                                    type: 'system_message',
+                                    message: `${nick} telah bergabung!`
+                                });
+                                
+                                console.log('Joined room:', roomId);
+                            });
+                            
+                            conn.on('error', (err) => {
+                                document.getElementById('room-status').textContent = 'Gagal menghubungkan ke room';
+                                document.getElementById('room-status').style.color = '#ef4444';
+                            });
+                            
+                            conn.on('close', () => {
+                                showMessage('Koneksi ke host terputus!', 3000);
+                            });
+                        } catch(err) {
+                            document.getElementById('room-status').textContent = 'Room tidak ditemukan!';
+                            document.getElementById('room-status').style.color = '#ef4444';
+                        }
+                    });
+
+                    GameState.peer.on('error', (err) => {
+                        document.getElementById('room-status').textContent = 'Error koneksi: ' + err.message;
+                        document.getElementById('room-status').style.color = '#ef4444';
+                    });
+                } catch(err) {
+                    document.getElementById('room-status').textContent = 'Gagal bergabung!';
+                    document.getElementById('room-status').style.color = '#ef4444';
+                }
+            },
+
+            handleConnection(conn) {
+                conn.on('open', () => {
+                    GameState.conn = conn;
+                    conn.on('data', (data) => {
+                        Game.handleNetworkData(data);
+                    });
+                    
+                    // Send current game state to new client
+                    if(GameState.isHost) {
+                        const gameState = {
+                            type: 'game_state',
+                            foods: GameState.foods,
+                            bots: GameState.bots.map(bot => ({
+                                x: bot.x, y: bot.y, score: bot.score, name: bot.name, health: bot.health
+                            })),
+                            players: Array.from(GameState.players.values()).map(p => ({
+                                id: p.id, name: p.name, color: p.color,
+                                x: p.x, y: p.y, score: p.score, health: p.health
+                            }))
+                        };
+                        conn.send(gameState);
+                        
+                        // Broadcast join message
+                        conn.send({
+                            type: 'system_message',
+                            message: 'Player baru bergabung!'
+                        });
+                    }
+                });
+                
+                conn.on('error', (err) => {
+                    console.error('Connection error:', err);
+                });
+                
+                conn.on('close', () => {
+                    showMessage('Seorang player keluar.', 3000);
+                });
+            }
+        };
+
+        // ==================== CHAT SYSTEM ====================
+        const Chat = {
+            visible: false,
+            
+            toggle() {
+                this.visible = !this.visible;
+                const container = document.getElementById('chat-container');
+                const toggleBtn = document.getElementById('chat-toggle');
+                
+                if(this.visible) {
+                    container.style.display = 'block';
+                    toggleBtn.textContent = '✖️';
+                    document.getElementById('chat-input').focus();
+                } else {
+                    container.style.display = 'none';
+                    toggleBtn.textContent = '💬';
+                }
+            },
+            
+            send() {
+                const input = document.getElementById('chat-input');
+                const message = input.value.trim();
+                
+                if(!message || !GameState.player) return;
+                
+                // Add to local chat
+                this.addMessage(GameState.player.name, message, true);
+                
+                // Send to network if multiplayer
+                if(GameState.mode === 'multi' && GameState.conn) {
+                    const data = {
+                        type: 'chat_message',
+                        sender: GameState.player.name,
+                        message: message,
+                        isSystem: false
+                    };
+                    
+                    try {
+                        GameState.conn.send(data);
+                    } catch(e) {
+                        console.error('Failed to send chat:', e);
+                    }
+                }
+                
+                input.value = '';
+            },
+            
+            receive(data) {
+                this.addMessage(data.sender, data.message, data.sender === GameState.player.name);
+            },
+            
+            addMessage(sender, message, isOwn = false) {
+                const messagesDiv = document.getElementById('chat-messages');
+                const messageDiv = document.createElement('div');
+                
+                messageDiv.className = 'chat-message';
+                messageDiv.style.textAlign = isOwn ? 'right' : 'left';
+                messageDiv.style.background = isOwn ? 'rgba(168,85,247,0.3)' : 'rgba(255,255,255,0.1)';
+                messageDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+                
+                messagesDiv.appendChild(messageDiv);
+                
+                // Limit messages
+                while(messagesDiv.children.length > 20) {
+                    messagesDiv.removeChild(messagesDiv.firstChild);
+                }
+                
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        };
+
+        // ==================== HELPER FUNCTIONS ====================
+        function showMessage(text, duration = 2000) {
+            const message = document.createElement('div');
+            message.textContent = text;
+            message.className = 'status-message';
+            
+            document.body.appendChild(message);
+            
+            setTimeout(() => {
+                message.style.opacity = '0';
+                message.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    if (message.parentNode) {
+                        message.parentNode.removeChild(message);
+                    }
+                }, 500);
+            }, duration);
+        }
+
+        function showDamagePopup(x, y, text) {
+            const popup = document.createElement('div');
+            popup.textContent = text;
+            popup.className = 'damage-popup';
+            
+            const screenX = x - GameState.cam.x + window.innerWidth/2;
+            const screenY = y - GameState.cam.y + window.innerHeight/2;
+            
+            popup.style.left = screenX + 'px';
+            popup.style.top = screenY + 'px';
+            
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.remove();
+            }, 1000);
+        }
+
+        function checkColorLevelUp() {
+            if (!GameState.player) return;
+            
+            const currentLevel = CONFIG.COLOR_LEVELS[GameState.colorLevel];
+            const nextLevel = CONFIG.COLOR_LEVELS[GameState.colorLevel + 1];
+            
+            if (nextLevel && GameState.player.score >= nextLevel.score) {
+                GameState.colorLevel++;
+                
+                const transition = document.getElementById('color-transition');
+                const nextColor = CONFIG.COLOR_LEVELS[GameState.colorLevel].color;
+                
+                if (nextColor === "rainbow") {
+                    transition.style.background = "linear-gradient(45deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #0000ff, #9900ff)";
+                } else if (nextColor === "gold") {
+                    transition.style.background = "linear-gradient(45deg, #FFD700, #FFA500, #FF6347)";
+                } else if (nextColor === "galaxy") {
+                    transition.style.background = "linear-gradient(45deg, #000428, #004e92, #8a2be2, #ff00ff)";
+                } else if (nextColor === "changing") {
+                    transition.style.background = "linear-gradient(45deg, #ff0000, #00ff00, #0000ff)";
+                } else {
+                    transition.style.background = nextColor;
+                }
+                
+                transition.style.opacity = "0.7";
+                transition.classList.add('color-flash');
+                
+                updateColorInfo();
+                
+                setTimeout(() => {
+                    transition.style.opacity = "0";
+                    transition.classList.remove('color-flash');
+                }, 2000);
+                
+                // Update player color
+                GameState.player.color = nextColor === "rainbow" ? 
+                    `hsl(${Math.random() * 360}, 100%, 60%)` : 
+                    nextColor;
+                
+                showMessage(`🌈 LEVEL UP! Warna: ${CONFIG.COLOR_LEVELS[GameState.colorLevel].name}`, 3000);
+            }
+        }
+
+        function updateColorInfo() {
+            const currentLevel = CONFIG.COLOR_LEVELS[GameState.colorLevel];
+            const nextLevel = CONFIG.COLOR_LEVELS[GameState.colorLevel + 1];
+            
+            document.getElementById('current-color').textContent = currentLevel.name;
+            document.getElementById('current-color').style.color = 
+                currentLevel.color === "rainbow" ? "#ff6b8b" :
+                currentLevel.color === "gold" ? "#FFD700" :
+                currentLevel.color === "galaxy" ? "#8a2be2" :
+                currentLevel.color === "changing" ? "#00ff00" :
+                currentLevel.color;
+            
+            if (nextLevel) {
+                document.getElementById('next-at').textContent = nextLevel.score.toLocaleString();
+            } else {
+                document.getElementById('next-at').textContent = "MAX";
+            }
+        }
+
+        function updateAmmoDisplay() {
+            const container = document.getElementById('ammo-display');
+            container.innerHTML = '';
+            
+            Object.entries(GameState.ammo).forEach(([type, count]) => {
+                if (count > 0) {
+                    const item = document.createElement('div');
+                    item.className = 'ammo-item';
+                    
+                    let icon = '🔵';
+                    let color = '#3b82f6';
+                    
+                    if (type === 'fire') {
+                        icon = '🔴';
+                        color = '#ef4444';
+                    } else if (type === 'special') {
+                        icon = '🟣';
+                        color = '#8b5cf6';
+                    }
+                    
+                    item.innerHTML = `
+                        <span style="color:${color}">${icon}</span>
+                        <span>${count}</span>
+                    `;
+                    
+                    container.appendChild(item);
+                }
+            });
+            
+            if (Object.values(GameState.ammo).every(count => count === 0)) {
+                const warning = document.createElement('div');
+                warning.className = 'ammo-item';
+                warning.innerHTML = `
+                    <span style="color:#ef4444">⚠️</span>
+                    <span style="color:#ef4444">KEHABISAN PELURU!</span>
+                `;
+                container.appendChild(warning);
+            }
+        }
+
+        function shoot() {
+            if (!GameState.player || !GameState.active || GameState.paused || GameState.shootCooldown) return;
+            
+            const now = Date.now();
+            if (now - GameState.lastShootTime < CONFIG.SHOOT_COOLDOWN) return;
+            
+            // Determine ammo type
+            let ammoType = 'normal';
+            if (GameState.ammo.special > 0) {
+                ammoType = 'special';
+            } else if (GameState.ammo.fire > 0) {
+                ammoType = 'fire';
+            } else if (GameState.ammo.normal > 0) {
+                ammoType = 'normal';
+            } else {
+                showMessage("💣 Kehabisan peluru!", 1500);
+                return;
+            }
+            
+            // Use ammo
+            GameState.ammo[ammoType]--;
+            
+            // Create projectile
+            const targetX = GameState.player.x + Math.cos(GameState.player.angle) * 1000;
+            const targetY = GameState.player.y + Math.sin(GameState.player.angle) * 1000;
+            const angle = Math.atan2(targetY - GameState.player.y, targetX - GameState.player.x);
+            
+            const projectile = new Projectile(
+                GameState.player.x,
+                GameState.player.y,
+                angle,
+                ammoType,
+                'player',
+                ammoType === 'fire' ? 20 : ammoType === 'special' ? 30 : 10
+            );
+            
+            GameState.projectiles.push(projectile);
+            GameState.lastShootTime = now;
+            GameState.shootCooldown = true;
+            
+            // Recoil effect
+            GameState.player.x -= Math.cos(angle) * 5;
+            GameState.player.y -= Math.sin(angle) * 5;
+            
+            // Update ammo display
+            updateAmmoDisplay();
+            
+            // Button effect
+            document.getElementById('shoot-btn').style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                document.getElementById('shoot-btn').style.transform = 'scale(1)';
+            }, 100);
+        }
+
+        function updateShootCooldown() {
+            if (!GameState.shootCooldown) return;
+            
+            const now = Date.now();
+            const elapsed = now - GameState.lastShootTime;
+            const cooldownPercent = Math.min(1, elapsed / CONFIG.SHOOT_COOLDOWN);
+            
+            const cooldownOverlay = document.getElementById('shoot-cooldown');
+            if (cooldownPercent < 1) {
+                cooldownOverlay.style.display = 'block';
+                cooldownOverlay.style.height = `${100 - (cooldownPercent * 100)}%`;
+            } else {
+                cooldownOverlay.style.display = 'none';
+                GameState.shootCooldown = false;
+            }
+        }
+
+        function activateSpeed() {
+            if (!GameState.player || !GameState.active) return;
+            
+            GameState.player.speed *= 1.5;
+            showMessage("⚡ Speed Boost Aktif!", 1500);
+            
+            setTimeout(() => {
+                if (GameState.player) {
+                    GameState.player.speed /= 1.5;
+                }
+            }, 3000);
+        }
+
+        function activateMagnet() {
+            showMessage("🧲 Magnet Aktif!", 1500);
+        }
+
+        function pauseGame() {
+            if (!GameState.active) return;
+            
+            GameState.paused = !GameState.paused;
+            
+            if (GameState.paused) {
+                showMessage("⏸️ Game Dijeda", 1000);
+            } else {
+                showMessage("▶️ Game Dilanjutkan", 1000);
+            }
+        }
+
+        // ==================== INIT & CONTROLS ====================
+        function init() {
+            console.log("Initializing game...");
+            
+            // Setup canvas
+            const canvas = document.getElementById('game');
+            resizeCanvas();
+            
+            // Setup touch controls
+            setupTouchControls();
+            
+            // Hide loading after 1.5s
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('ui-layer').style.display = 'flex';
+                console.log("Game ready!");
+            }, 1500);
+            
+            // Force landscape on mobile
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(() => {
+                    console.log("Orientation lock not supported");
+                });
+            }
+        }
+
+        function resizeCanvas() {
+            const canvas = document.getElementById('game');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            console.log(`Canvas resized: ${canvas.width}x${canvas.height}`);
+        }
+
+        function setupTouchControls() {
+            const canvas = document.getElementById('game');
+            let isTouching = false;
+            
+            canvas.addEventListener('touchstart', (e) => {
+                if (!GameState.player || !GameState.active || GameState.paused) return;
+                e.preventDefault();
+                isTouching = true;
+                handleTouch(e.touches[0]);
+            });
+            
+            canvas.addEventListener('touchmove', (e) => {
+                if (!GameState.player || !GameState.active || !isTouching || GameState.paused) return;
+                e.preventDefault();
+                handleTouch(e.touches[0]);
+            });
+            
+            canvas.addEventListener('touchend', () => {
+                isTouching = false;
+            });
+            
+            function handleTouch(touch) {
+                const rect = canvas.getBoundingClientRect();
+                const touchX = touch.clientX - rect.left;
+                const touchY = touch.clientY - rect.top;
+                
+                // Calculate angle from center
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                const dx = touchX - centerX;
+                const dy = touchY - centerY;
+                const angle = Math.atan2(dy, dx);
+                
+                GameState.player.targetAngle = angle;
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('load', init);
+
+        // ==================== EXPORT FUNCTIONS ====================
+        window.Game = Game;
+        window.Room = Room;
+        window.Chat = Chat;
+        window.shoot = shoot;
+        window.activateSpeed = activateSpeed;
+        window.activateMagnet = activateMagnet;
+        window.pauseGame = pauseGame;
+
+        console.log("👥 Cacing Mabar Arena Loaded!");
+    </script>
+</body>
+</html>
