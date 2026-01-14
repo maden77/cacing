@@ -138,8 +138,8 @@
         /* INFO PANEL */
         #info-panel {
             position: absolute;
-            top: min(3vw, 20px);
-            right: min(3vw, 20px);
+            top: min(3vw, 10px);
+            right: min(3vw, 10px);
             z-index: 50;
             display: none;
             flex-direction: column;
@@ -589,7 +589,7 @@
                 <div>🎯 Makan makanan untuk skor & peluru</div>
                 <div>🔫 Tekan tombol TEMBAK untuk serang</div>
                 <div>👥 Mabar dengan teman 1 WiFi</div>
-                <div>🌈 Warna berubah setiap 15.000 skor</div>
+                <div>🌈 Warna berubah setiap 20.000 skor</div>
             </div>
         </div>
     </div>
@@ -708,17 +708,17 @@
             BOT_NAMES: ['Bot-Alpha','Bot-Beta','Bot-Gamma','Bot-Delta','Bot-Epsilon','Bot-Zeta','Bot-Eta','Bot-Theta'],
             
             COLOR_LEVELS: [
-                {score: 0, name: "Ungu", color: "#a855f7", nextAt: 15000},
-                {score: 15000, name: "Biru", color: "#3b82f6", nextAt: 30000},
-                {score: 30000, name: "Hijau", color: "#10b981", nextAt: 45000},
-                {score: 45000, name: "Kuning", color: "#f59e0b", nextAt: 60000},
-                {score: 60000, name: "Merah", color: "#ef4444", nextAt: 75000},
-                {score: 75000, name: "Pink", color: "#ec4899", nextAt: 90000},
-                {score: 90000, name: "Cyan", color: "#06b6d4", nextAt: 105000},
-                {score: 105000, name: "Rainbow", color: "rainbow", nextAt: 120000},
-                {score: 120000, name: "Gold", color: "gold", nextAt: 135000},
-                {score: 135000, name: "Galaxy", color: "galaxy", nextAt: 150000},
-                {score: 150000, name: "UNLIMITED", color: "changing", nextAt: Infinity}
+                {score: 0, name: "Ungu", color: "#a855f7", nextAt: 20000},
+                {score: 20000, name: "Biru", color: "#3b82f6", nextAt: 40000},
+                {score: 40000, name: "Hijau", color: "#10b981", nextAt: 60000},
+                {score: 60000, name: "Kuning", color: "#f59e0b", nextAt: 80000},
+                {score: 80000, name: "Merah", color: "#ef4444", nextAt: 100000},
+                {score: 100000, name: "Pink", color: "#ec4899", nextAt: 120000},
+                {score: 120000, name: "Cyan", color: "#06b6d4", nextAt: 140000},
+                {score: 140000, name: "Rainbow", color: "rainbow", nextAt: 160000},
+                {score: 160000, name: "Gold", color: "gold", nextAt: 180000},
+                {score: 180000, name: "Galaxy", color: "galaxy", nextAt: 200000},
+                {score: 200000, name: "UNLIMITED", color: "changing", nextAt: Infinity}
             ],
             
             AMMO_TYPES: {
