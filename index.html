@@ -677,12 +677,12 @@
     <script>
         // ==================== KONFIGURASI ====================
         const CONFIG = {
-            WORLD_SIZE: 30000,
-            FOOD_COUNT: 300,
-            BOT_COUNT: 20,
-            PLAYER_SIZE: 20,
-            MAX_SEGMENTS: 80,
-            COLLISION_DISTANCE: 40,
+            WORLD_SIZE: 40000,
+            FOOD_COUNT: 2000,
+            BOT_COUNT: 50,
+            PLAYER_SIZE: 15,
+            MAX_SEGMENTS: 600,
+            COLLISION_DISTANCE: 30,
             SHOOT_COOLDOWN: 800,
             BOT_SHOOT_COOLDOWN: 3000,
             PROJECTILE_SPEED: 12,
@@ -1418,7 +1418,7 @@
                         color: foodType.color,
                         ammoType: foodType.ammoType,
                         damage: foodType.damage,
-                        size: 23 + Math.random() * 17
+                        size: 32 + Math.random() * 25
                     });
                 }
             },
