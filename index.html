@@ -9,10 +9,16 @@
     <meta name="apple-mobile-web-app-title" content="Cacing Arena">
       <link rel="icon" href="icon-192x192.png" sizes="192x192">
     
+    <!-- PWA MANIFEST -->
     <link rel="manifest" href="./manifest.json">
+    
+    <!-- PWA META TAGS -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192/a855f7/ffffff?text=CA">
     
     <title>Cacing Arena Pro - Mabar LAN</title>
     
+    <!-- STYLE ASLI (SAMA) -->
     <style>
         /* RESET DAN ORIENTASI LANDSCAPE */
         * { 
@@ -598,6 +604,22 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+        
+        /* PWA DEBUG BUTTON */
+        #pwa-debug-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            padding: 8px 12px;
+            background: #f59e0b;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 10000;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -728,11 +750,139 @@
 
     <!-- PWA INSTALL BUTTON (Akan muncul otomatis) -->
     <button id="pwa-install-btn">📲 INSTALL GAME</button>
+    
+    <!-- PWA DEBUG BUTTON -->
+    <button id="pwa-debug-btn" onclick="debugPWA()">🐛 DEBUG PWA</button>
 
     <!-- PEERJS SCRIPT -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
 
     <script>
+        // ==================== PWA INSTALL SYSTEM ====================
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+        const debugBtn = document.getElementById('pwa-debug-btn');
+        
+        // Show debug button on localhost
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            debugBtn.style.display = 'block';
+        }
+        
+        // Before install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('🚀 PWA: Install prompt available');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button
+            setTimeout(() => {
+                installBtn.style.display = 'block';
+                showMessage('📲 Game bisa diinstall! Klik tombol INSTALL GAME', 5000);
+            }, 3000);
+        });
+        
+        // Install button click
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                showInstallGuide();
+                return;
+            }
+            
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response: ${outcome}`);
+            deferredPrompt = null;
+            installBtn.style.display = 'none';
+        });
+        
+        // App installed
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA installed successfully');
+            installBtn.style.display = 'none';
+            showMessage('🎉 Game berhasil diinstall! Buka dari home screen', 5000);
+        });
+        
+        // Debug function
+        function debugPWA() {
+            console.log('🔍 PWA Debug Info:');
+            console.log('Install Prompt:', !!deferredPrompt);
+            console.log('Service Worker:', navigator.serviceWorker.controller ? 'Active' : 'None');
+            
+            const info = `
+PWA DEBUG INFO:
+
+✅ Browser Support: ${'BeforeInstallPromptEvent' in window ? 'YES' : 'NO'}
+✅ Install Prompt: ${deferredPrompt ? 'AVAILABLE' : 'NOT AVAILABLE'}
+✅ Service Worker: ${navigator.serviceWorker.controller ? 'ACTIVE' : 'NOT ACTIVE'}
+
+📱 CARA INSTALL MANUAL:
+• Chrome Android: Menu (⋮) → "Add to Home screen"
+• Safari iOS: Share (□↑) → "Add to Home Screen"
+• Chrome Desktop: Klik icon + di address bar
+
+⚠️ NOTE:
+• Butuh HTTPS atau localhost
+• Visit 2x dengan interval 5 menit
+• Butuh interaksi dengan page
+            `;
+            
+            alert(info);
+        }
+        
+        function showInstallGuide() {
+            const guide = `
+                <div style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(20,20,40,0.95);
+                    padding: 30px;
+                    border-radius: 20px;
+                    border: 3px solid #a855f7;
+                    z-index: 10001;
+                    max-width: 400px;
+                    text-align: center;
+                    color: white;
+                ">
+                    <h3 style="color: #a855f7; margin-bottom: 20px;">📲 CARA INSTALL MANUAL</h3>
+                    
+                    <div style="text-align: left; margin: 20px 0; font-size: 14px;">
+                        <div style="margin: 10px 0; padding: 10px; background: rgba(168,85,247,0.1); border-radius: 10px;">
+                            <strong>Chrome Android:</strong><br>
+                            Menu (⋮) → "Add to Home screen"
+                        </div>
+                        
+                        <div style="margin: 10px 0; padding: 10px; background: rgba(168,85,247,0.1); border-radius: 10px;">
+                            <strong>Safari iOS:</strong><br>
+                            Share (□↑) → "Add to Home Screen"
+                        </div>
+                        
+                        <div style="margin: 10px 0; padding: 10px; background: rgba(168,85,247,0.1); border-radius: 10px;">
+                            <strong>Chrome Desktop:</strong><br>
+                            Klik icon <span style="color:#a855f7">+</span> di address bar
+                        </div>
+                    </div>
+                    
+                    <button onclick="this.parentElement.remove()" style="
+                        padding: 10px 20px;
+                        background: #a855f7;
+                        color: white;
+                        border: none;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        margin-top: 10px;
+                    ">
+                        Tutup
+                    </button>
+                </div>
+            `;
+            
+            const div = document.createElement('div');
+            div.innerHTML = guide;
+            document.body.appendChild(div);
+        }
+        
         // ==================== KONFIGURASI ====================
         const CONFIG = {
             WORLD_SIZE: 40000,
@@ -2484,119 +2634,23 @@
             }
         }
 
-        // ==================== PWA SYSTEM ====================
-        let deferredPrompt;
-        const installButton = document.getElementById('pwa-install-btn');
-        
-        if (installButton) {
-            installButton.addEventListener('click', async () => {
-                if (!deferredPrompt) {
-                    showInstallGuide();
-                    return;
-                }
-                
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response: ${outcome}`);
-                deferredPrompt = null;
-                installButton.style.display = 'none';
-            });
-        }
-        
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('🚀 beforeinstallprompt event fired');
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            setTimeout(() => {
-                if (deferredPrompt && installButton) {
-                    installButton.style.display = 'block';
-                    console.log('📲 Install button shown');
-                }
-            }, 5000);
-        });
-        
-        window.addEventListener('appinstalled', () => {
-            console.log('✅ PWA installed successfully');
-            if (installButton) installButton.style.display = 'none';
-            showMessage('🎉 Game berhasil diinstall!', 3000);
-        });
-        
-        function showInstallGuide() {
-            const guideHTML = `
-                <div style="
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: rgba(20,20,40,0.95);
-                    padding: 30px;
-                    border-radius: 20px;
-                    border: 3px solid #a855f7;
-                    z-index: 10001;
-                    max-width: 400px;
-                    text-align: center;
-                    backdrop-filter: blur(10px);
-                ">
-                    <h3 style="color: #a855f7; margin-bottom: 20px;">📲 Cara Install Game</h3>
-                    
-                    <div style="text-align: left; margin: 20px 0; font-size: 14px;">
-                        <div style="margin: 10px 0; padding: 10px; background: rgba(168,85,247,0.1); border-radius: 10px;">
-                            <strong>Chrome/Edge Desktop:</strong><br>
-                            Klik icon <span style="color: #a855f7">📲</span> di address bar
-                        </div>
-                        
-                        <div style="margin: 10px 0; padding: 10px; background: rgba(168,85,247,0.1); border-radius: 10px;">
-                            <strong>Chrome Android:</strong><br>
-                            Menu (⋮) → "Add to Home screen"
-                        </div>
-                        
-                        <div style="margin: 10px 0; padding: 10px; background: rgba(168,85,247,0.1); border-radius: 10px;">
-                            <strong>Safari iOS:</strong><br>
-                            Klik share (□↑) → "Add to Home Screen"
-                        </div>
-                    </div>
-                    
-                    <button onclick="this.parentElement.remove()" style="
-                        padding: 10px 20px;
-                        background: #a855f7;
-                        color: white;
-                        border: none;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        margin-top: 10px;
-                    ">
-                        Tutup
-                    </button>
-                </div>
-            `;
-            
-            const guideDiv = document.createElement('div');
-            guideDiv.innerHTML = guideHTML;
-            document.body.appendChild(guideDiv);
-        }
-        
+        // ==================== PWA SERVICE WORKER ====================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
+                // Create simple service worker
                 const swContent = `
-                    self.addEventListener('install', (event) => {
-                        console.log('Service Worker: Installing...');
-                        event.waitUntil(
-                            caches.open('cacing-arena-v1').then((cache) => {
-                                return cache.addAll([
-                                    './',
-                                    './index.html'
-                                ]);
-                            })
-                        );
+                    self.addEventListener('install', function(e) {
+                        console.log('🎮 Cacing Arena PWA: Service Worker Installed');
+                        self.skipWaiting();
                     });
                     
-                    self.addEventListener('fetch', (event) => {
-                        event.respondWith(
-                            caches.match(event.request).then((response) => {
-                                return response || fetch(event.request);
-                            })
-                        );
+                    self.addEventListener('activate', function(e) {
+                        console.log('🎮 Cacing Arena PWA: Service Worker Activated');
+                        e.waitUntil(clients.claim());
+                    });
+                    
+                    self.addEventListener('fetch', function(e) {
+                        e.respondWith(fetch(e.request));
                     });
                 `;
                 
@@ -2613,20 +2667,10 @@
                     });
             });
         }
-        
-        function checkPWAStatus() {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-            const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
-            
-            if (isStandalone || isFullscreen) {
-                console.log('✅ Running as installed PWA');
-                if (installButton) installButton.style.display = 'none';
-            }
-        }
 
         // ==================== INIT & CONTROLS ====================
         function init() {
-            console.log("Initializing game...");
+            console.log("🎮 Initializing Cacing Arena Pro...");
             
             // Setup canvas
             const canvas = document.getElementById('game');
@@ -2644,14 +2688,11 @@
             // Setup keyboard controls
             setupKeyboardControls();
             
-            // Check PWA status
-            checkPWAStatus();
-            
             // Hide loading setelah 1.5s
             setTimeout(() => {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('ui-layer').style.display = 'flex';
-                console.log("Game ready!");
+                console.log("✅ Game ready!");
                 
                 // Mainkan suara welcome
                 if (window.GameAudio) {
@@ -2804,8 +2845,9 @@
         window.activateMagnet = activateMagnet;
         window.pauseGame = pauseGame;
         window.showInstallGuide = showInstallGuide;
+        window.debugPWA = debugPWA;
 
-        console.log("👥 Cacing Mabar Arena PWA Ready!");
+        console.log("🎮 Cacing Arena Pro PWA Ready!");
     </script>
 </body>
 </html>
