@@ -2757,42 +2757,29 @@
 
         console.log("👥 Cacing Mabar Arena Loaded!");
     </script>
-                 <script>
+
+     <!-- Install Button -->
+<button id="install-btn" style="display: none;">
+  📲 Install App
+</button>
+
+<script>
   // Register Service Worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js')
         .then(registration => {
-          console.log('Service Worker registered with scope:', registration.scope);
-          
-          // Cek update setiap 1 jam
-          setInterval(() => {
-            registration.update();
-          }, 60 * 60 * 1000);
+          console.log('ServiceWorker registered:', registration);
         })
         .catch(error => {
-          console.log('Service Worker registration failed:', error);
+          console.log('ServiceWorker registration failed:', error);
         });
     });
   }
-
-  // Deteksi koneksi offline
-  window.addEventListener('offline', () => {
-    showMessage('⚠️ Anda sedang offline', 2000);
-  });
-
-  window.addEventListener('online', () => {
-    showMessage('✅ Koneksi kembali', 2000);
-  });
-
-  // Deteksi PWA launch
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    console.log('Running in PWA mode');
-    // Tambahkan logika khusus untuk PWA jika diperlukan
-  }
 </script>
 
-<!-- Load install prompt script -->
 <script src="install-prompt.js"></script>
+                
+    
 </body>
 </html>
