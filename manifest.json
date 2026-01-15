@@ -3,8 +3,8 @@
   "short_name": "Cacing Arena",
   "description": "Game multiplayer cacing arena untuk bermain dengan teman dalam satu WiFi",
   "start_url": "/",
-  "display": "fullscreen",
-  "display_override": ["fullscreen", "window-controls-overlay"],
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay"],
   "orientation": "landscape",
   "theme_color": "#0a0a1a",
   "background_color": "#050510",
@@ -56,21 +56,7 @@
   "prefer_related_applications": false,
   "related_applications": [],
   "scope": "/",
-  "screenshots": [
-    {
-      "src": "screenshots/screenshot1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/screenshot2.png",
-      "sizes": "750x1334",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
-  ],
-  "shortcuts": [
+  
     {
       "name": "Main Solo",
       "short_name": "Solo",
