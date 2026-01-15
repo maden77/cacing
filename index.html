@@ -2,36 +2,17 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-  
-         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
-      <link rel="manifest" href="manifest.json">
-        <link rel="icon" href="icon2048-192x192.png" sizes="192x192">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cacing Arena">
+    
+    <link rel="manifest" href="./manifest.json">
+    
     <title>Cacing Arena Pro - Mabar LAN</title>
+    
     <style>
-   /* Animasi untuk install button */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-#install-btn {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #a855f7, #7c3aed);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
-  z-index: 10000;
-  box-shadow: 0 4px 12px rgba(168,85,247,0.4);
-  display: none;
-  animation: fadeIn 0.3s;
-}
         /* RESET DAN ORIENTASI LANDSCAPE */
         * { 
             margin: 0; 
@@ -581,6 +562,41 @@
             transform: scale(1.1);
             box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
         }
+        
+        /* PWA INSTALL BUTTON */
+        #pwa-install-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(168,85,247,0.4);
+            display: none;
+            animation: fadeIn 0.3s, pulse 2s infinite;
+        }
+        
+        #pwa-install-btn:hover {
+            animation: none;
+            transform: scale(1.05);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -612,13 +628,14 @@
             <input type="text" id="nick" placeholder="Nama Player" value="Player" maxlength="12">
             <button class="btn btn-play" onclick="Game.startSolo()">🎮 MAIN SOLO</button>
             <button class="btn btn-mabar" onclick="Room.show()">👥 MABAR LAN</button>
-                  <!-- Tombol Install PWA -->
-        <button class="btn" onclick="PWA.showInstallGuide()" 
-                style="background: linear-gradient(135deg, #f59e0b, #d97706); margin-top: 10px;">
-            📲 INSTALL APP
-        </button>
-        
-    
+            
+            <!-- TOMBOL INSTALL PWA -->
+            <button id="menu-install-btn" class="btn" 
+                    style="background: linear-gradient(135deg, #f59e0b, #d97706); margin-top: 10px;"
+                    onclick="showInstallGuide()">
+                📲 INSTALL APP
+            </button>
+            
             <div style="margin-top: min(4vw, 20px); color: #f59e0b; font-size: min(3.5vw, 14px); text-align: left; padding: 0 min(2vw, 10px);">
                 <div>🎯 Makan makanan untuk skor & peluru</div>
                 <div>🔫 Tekan tombol TEMBAK untuk serang</div>
@@ -705,6 +722,12 @@
         <div class="mobile-btn" onclick="pauseGame()">⏸️</div>
     </div>
 
+    <!-- AUDIO BUTTON -->
+    <button id="audio-toggle-btn">🔊</button>
+
+    <!-- PWA INSTALL BUTTON (Akan muncul otomatis) -->
+    <button id="pwa-install-btn">📲 INSTALL GAME</button>
+
     <!-- PEERJS SCRIPT -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
 
@@ -770,7 +793,6 @@
                 this.volume = 0.8;
                 console.log("🔊 Audio system ready!");
                 
-                // Pool untuk audio beep
                 this.audioPool = [];
                 for(let i = 0; i < 5; i++) {
                     this.audioPool.push(null);
@@ -823,7 +845,6 @@
             
             beep(freq, duration, type = 'sine') {
                 try {
-                    // Cari audio context yang idle
                     let contextIndex = -1;
                     for(let i = 0; i < this.audioPool.length; i++) {
                         if(!this.audioPool[i] || 
@@ -848,13 +869,11 @@
                     oscillator.type = type;
                     gainNode.gain.value = this.volume * 0.3;
                     
-                    // Fade out
                     gainNode.gain.setValueAtTime(this.volume * 0.3, audioContext.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + (duration/1000));
                     
                     oscillator.start();
                     
-                    // Auto cleanup
                     setTimeout(() => {
                         try {
                             oscillator.stop();
@@ -862,9 +881,7 @@
                             gainNode.disconnect();
                             audioContext.close();
                             this.audioPool[contextIndex] = null;
-                        } catch(e) {
-                            // Ignore cleanup errors
-                        }
+                        } catch(e) {}
                     }, duration + 50);
                     
                 } catch(e) {
@@ -956,7 +973,6 @@
                 const screenX = this.x - GameState.cam.x + ctx.canvas.width/2;
                 const screenY = this.y - GameState.cam.y + ctx.canvas.height/2;
                 
-                // Draw dengan glow
                 ctx.shadowColor = this.color;
                 ctx.shadowBlur = 15;
                 ctx.fillStyle = this.color;
@@ -964,7 +980,6 @@
                 ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Core yang lebih terang
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
@@ -1028,12 +1043,11 @@
                 this.health = 100;
                 this.maxHealth = 100;
                 this.segments = [];
-                this.segmentCount = isBot ? 15 : 20 ;
+                this.segmentCount = isBot ? 15 : 20;
                 this.mouthState = 'normal';
                 this.mouthTimer = 0;
                 this.lastActionTime = Date.now();
                 
-                // Inisialisasi segment
                 for(let i = 0; i < this.segmentCount; i++) {
                     this.segments.push({ 
                         x: this.x, 
@@ -1044,29 +1058,24 @@
             }
 
             update() {
-                // Update mulut state
                 this.mouthTimer++;
                 if (this.mouthTimer > 60) {
                     this.mouthState = 'normal';
                     this.mouthTimer = 0;
                 }
                 
-                // Smooth angle rotation
                 let angleDiff = this.targetAngle - this.angle;
                 while(angleDiff > Math.PI) angleDiff -= Math.PI * 2;
                 while(angleDiff < -Math.PI) angleDiff += Math.PI * 2;
                 this.angle += angleDiff * 0.15;
                 
-                // Move
                 this.x += Math.cos(this.angle) * this.speed;
                 this.y += Math.sin(this.angle) * this.speed;
                 
-                // World boundaries
                 const max = CONFIG.WORLD_SIZE / 2;
                 if(Math.abs(this.x) > max - 500) this.targetAngle += Math.PI * 0.5;
                 if(Math.abs(this.y) > max - 500) this.targetAngle += Math.PI * 0.5;
                 
-                // Update segments
                 this.segments[0].x = this.x;
                 this.segments[0].y = this.y;
                 
@@ -1092,13 +1101,11 @@
                 const screenX = this.x - GameState.cam.x + ctx.canvas.width/2;
                 const screenY = this.y - GameState.cam.y + ctx.canvas.height/2;
                 
-                // Draw segments dari ekor ke kepala
                 for(let i = this.segments.length - 1; i >= 0; i--) {
                     const seg = this.segments[i];
                     const segScreenX = seg.x - GameState.cam.x + ctx.canvas.width/2;
                     const segScreenY = seg.y - GameState.cam.y + ctx.canvas.height/2;
                     
-                    // Draw segment dengan glow
                     ctx.shadowColor = this.color;
                     ctx.shadowBlur = 15;
                     ctx.fillStyle = this.color;
@@ -1106,13 +1113,11 @@
                     ctx.arc(segScreenX, segScreenY, seg.size, 0, Math.PI * 2);
                     ctx.fill();
                     
-                    // Border
                     ctx.shadowBlur = 5;
                     ctx.strokeStyle = "#000";
                     ctx.lineWidth = 2;
                     ctx.stroke();
                     
-                    // Draw wajah hanya di kepala
                     if(i === 0) {
                         this.drawFace(ctx, segScreenX, segScreenY, seg.size);
                         this.drawInfo(ctx, segScreenX, segScreenY, seg.size);
@@ -1126,7 +1131,6 @@
                 ctx.translate(x, y);
                 ctx.rotate(this.angle);
                 
-                // Mata
                 ctx.fillStyle = "#fff";
                 ctx.beginPath();
                 ctx.arc(22, -10, 8, 0, Math.PI * 2);
@@ -1135,7 +1139,6 @@
                 ctx.arc(22, 10, 8, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Pupil dengan ekspresi
                 let pupilOffsetX = 0;
                 let pupilOffsetY = 0;
                 
@@ -1156,7 +1159,6 @@
                 ctx.arc(25 + pupilOffsetX, 12 + pupilOffsetY, 4, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Kilau mata
                 ctx.fillStyle = "#fff";
                 ctx.beginPath();
                 ctx.arc(23 + pupilOffsetX, -9 + pupilOffsetY, 2, 0, Math.PI * 2);
@@ -1165,7 +1167,6 @@
                 ctx.arc(23 + pupilOffsetX, 11 + pupilOffsetY, 2, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // MULUT EKSPRESIF
                 ctx.strokeStyle = "#000";
                 ctx.lineWidth = 3;
                 ctx.lineCap = "round";
@@ -1179,7 +1180,6 @@
                     ctx.arc(18, 0, 15, 0.1, Math.PI - 0.1);
                     ctx.stroke();
                     
-                    // Lidah
                     ctx.fillStyle = "#ff6b8b";
                     ctx.beginPath();
                     ctx.ellipse(10, 5, 8, 4, 0, 0, Math.PI * 2);
@@ -1192,7 +1192,6 @@
                     ctx.lineTo(26, 5);
                     ctx.stroke();
                     
-                    // Gigi
                     ctx.fillStyle = "#fff";
                     for(let i = 0; i < 3; i++) {
                         ctx.fillRect(12 + i * 4, -7, 2, 3);
@@ -1203,7 +1202,6 @@
                     ctx.arc(18, 5, 10, 0.3, Math.PI - 0.3);
                     ctx.stroke();
                     
-                    // Mata menyipit
                     ctx.fillStyle = "#000";
                     ctx.beginPath();
                     ctx.ellipse(24, -8, 3, 5, 0, 0, Math.PI * 2);
@@ -1224,34 +1222,28 @@
             drawInfo(ctx, x, y, size) {
                 if (this.isBot) return;
                 
-                // Health bar
                 const barWidth = 80;
                 const barHeight = 8;
                 const barX = x - barWidth/2;
                 const barY = y - size - 50;
                 
-                // Background
                 ctx.fillStyle = "rgba(0,0,0,0.5)";
                 ctx.fillRect(barX, barY, barWidth, barHeight);
                 
-                // Health fill
                 const healthPercent = this.health / this.maxHealth;
                 ctx.fillStyle = healthPercent > 0.5 ? "#10b981" : 
                                 healthPercent > 0.25 ? "#f59e0b" : "#ef4444";
                 ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
                 
-                // Border
                 ctx.strokeStyle = "#000";
                 ctx.lineWidth = 1;
                 ctx.strokeRect(barX, barY, barWidth, barHeight);
                 
-                // Nama
                 ctx.fillStyle = "#fff";
                 ctx.font = "bold 16px Arial";
                 ctx.textAlign = "center";
                 ctx.fillText(this.name, x, y - size - 65);
                 
-                // Skor
                 ctx.font = "14px Arial";
                 ctx.fillStyle = "#f59e0b";
                 ctx.fillText(`${this.score.toLocaleString()}`, x, y - size - 80);
@@ -1265,7 +1257,6 @@
                     window.GameAudio.play('damage');
                 }
                 
-                // Create damage particles
                 for(let i = 0; i < 5; i++) {
                     GameState.particles.push(new Particle(
                         this.x,
@@ -1300,7 +1291,6 @@
                 
                 const nick = document.getElementById('nick').value.trim() || "Player";
                 
-                // Reset game state
                 GameState.active = true;
                 GameState.paused = false;
                 GameState.mode = 'solo';
@@ -1316,7 +1306,6 @@
                 GameState.lastShootTime = 0;
                 GameState.shootCooldown = false;
                 
-                // Create player
                 const color = CONFIG.COLOR_LEVELS[0].color === "rainbow" ? 
                     `hsl(${Math.random() * 360}, 100%, 60%)` : 
                     CONFIG.COLOR_LEVELS[0].color;
@@ -1326,7 +1315,6 @@
                     setTimeout(() => window.GameAudio.play('welcome'), 300);
                 }
                 
-                // Create bots
                 for(let i = 0; i < CONFIG.BOT_COUNT; i++) {
                     const angle = Math.random() * Math.PI * 2;
                     const dist = 2000 + Math.random() * 5000;
@@ -1342,16 +1330,9 @@
                     GameState.bots.push(bot);
                 }
                 
-                // Generate food
                 this.generateFood();
-                
-                // Update ammo display
                 updateAmmoDisplay();
-                
-                // Show game UI
                 this.showGameUI();
-                
-                // Start game loop
                 this.loop();
                 
                 showMessage("🎮 Game Solo Dimulai!\n\n🔫 Tekan tombol TEMBAK\n🍎 Makan makanan untuk peluru", 3000);
@@ -1364,7 +1345,6 @@
                 GameState.paused = false;
                 GameState.mode = 'multi';
                 
-                // Create player
                 const color = CONFIG.COLOR_LEVELS[0].color === "rainbow" ? 
                     `hsl(${Math.random() * 360}, 100%, 60%)` : 
                     CONFIG.COLOR_LEVELS[0].color;
@@ -1380,9 +1360,7 @@
                     }, 500);
                 }
                 
-                // Host generates world
                 if (isHost) {
-                    // Create bots
                     for(let i = 0; i < CONFIG.BOT_COUNT; i++) {
                         const angle = Math.random() * Math.PI * 2;
                         const dist = 2000 + Math.random() * 5000;
@@ -1398,10 +1376,8 @@
                         GameState.bots.push(bot);
                     }
                     
-                    // Generate food
                     this.generateFood();
                     
-                    // Broadcast game state periodically
                     setInterval(() => {
                         if (GameState.conn && GameState.isHost) {
                             this.broadcastGameState();
@@ -1409,13 +1385,8 @@
                     }, 100);
                 }
                 
-                // Update ammo display
                 updateAmmoDisplay();
-                
-                // Show game UI
                 this.showGameUI();
-                
-                // Start game loop
                 this.loop();
                 
                 showMessage(`👥 Game Mabar Dimulai!\n🎮 Room: ${GameState.roomId}\n\n🔫 Main dengan temanmu!`, 3000);
@@ -1463,104 +1434,73 @@
                 const canvas = document.getElementById('game');
                 const ctx = canvas.getContext('2d');
                 
-                // Clear canvas
                 ctx.fillStyle = '#050510';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // Update camera
                 if (GameState.player) {
                     GameState.cam.x += (GameState.player.x - GameState.cam.x) * 0.08;
                     GameState.cam.y += (GameState.player.y - GameState.cam.y) * 0.08;
                     
-                    // Regenerate health
                     if (GameState.playerHealth < 100) {
                         GameState.playerHealth = Math.min(100, GameState.playerHealth + CONFIG.HEALTH_REGEN_RATE);
                     }
                 }
                 
-                // Update game state
                 this.updateEntities();
-                
-                // Draw grid
                 this.drawGrid(ctx);
-                
-                // Draw food
                 this.drawFood(ctx);
-                
-                // Draw projectiles
                 this.drawProjectiles(ctx);
-                
-                // Draw particles
                 this.drawParticles(ctx);
                 
-                // Draw bots
                 GameState.bots.forEach(bot => bot.draw(ctx));
                 
-                // Draw other players
                 GameState.players.forEach(player => {
                     if(player.id !== GameState.player.id) {
                         player.draw(ctx);
                     }
                 });
                 
-                // Draw player
                 if (GameState.player) {
                     GameState.player.draw(ctx);
                 }
                 
-                // Update minimap
                 this.updateMinimap();
-                
-                // Update HUD
                 this.updateHUD();
-                
-                // Update shoot cooldown
                 updateShootCooldown();
                 
-                // Network sync for multiplayer
                 if(GameState.mode === 'multi' && GameState.conn && Date.now() - GameState.lastUpdate > 50) {
                     this.sendPlayerUpdate();
                     GameState.lastUpdate = Date.now();
                 }
                 
-                // Continue loop
                 requestAnimationFrame(() => this.loop());
             },
             
             updateEntities() {
                 if (!GameState.player) return;
                 
-                // Update player
                 GameState.player.update();
                 GameState.player.health = GameState.playerHealth;
                 
-                // Update bots
                 this.updateBots();
-                
-                // Update projectiles
                 this.updateProjectiles();
                 
-                // Player eats food
                 GameState.foods.forEach((food, index) => {
                     const dist = Math.hypot(GameState.player.x - food.x, GameState.player.y - food.y);
                     if(dist < CONFIG.COLLISION_DISTANCE) {
-                        // Add score and coins
                         GameState.player.score += food.value;
                         GameState.coins += Math.floor(food.value / 10);
                         
-                        // Add ammo
                         if (GameState.ammo[food.ammoType] < 100) {
                             GameState.ammo[food.ammoType] += 2;
                         }
                         
-                        // Player eating animation
                         GameState.player.eatFood();
                         
                         if (window.GameAudio && food.value >= 200) {
                             window.GameAudio.play('coin');
                         }
                         
-                        // Create particles
                         for(let i = 0; i < 5; i++) {
                             GameState.particles.push(new Particle(
                                 food.x,
@@ -1569,39 +1509,28 @@
                             ));
                         }
                         
-                        // Replace food
                         GameState.foods[index] = this.createFood();
-                        
-                        // Check for color level up
                         checkColorLevelUp();
-                        
-                        // Update ammo display
                         updateAmmoDisplay();
                         
-                        // Broadcast in multiplayer
                         if (GameState.mode === 'multi' && GameState.isHost) {
                             this.broadcastFoodUpdate(index, GameState.foods[index]);
                         }
                     }
                 });
                 
-                // Player eats bot
                 GameState.bots.forEach((bot, index) => {
                     const dist = Math.hypot(GameState.player.x - bot.x, GameState.player.y - bot.y);
                     if(dist < CONFIG.COLLISION_DISTANCE * 1.2) {
-                        // Big bonus
                         const bonus = bot.score * 3;
                         GameState.player.score += bonus;
                         GameState.coins += Math.floor(bot.score / 2);
                         
-                        // Player happy animation
                         GameState.player.scoreBonus();
                         
-                        // Add ammo
                         GameState.ammo.normal = Math.min(100, GameState.ammo.normal + 10);
                         GameState.ammo.fire = Math.min(50, GameState.ammo.fire + 5);
                         
-                        // Create particles
                         for(let i = 0; i < 20; i++) {
                             GameState.particles.push(new Particle(
                                 bot.x,
@@ -1610,7 +1539,6 @@
                             ));
                         }
                         
-                        // Respawn bot
                         const angle = Math.random() * Math.PI * 2;
                         const distRespawn = 3000 + Math.random() * 5000;
                         bot.x = Math.cos(angle) * distRespawn;
@@ -1623,7 +1551,6 @@
                     }
                 });
                 
-                // Update particles
                 GameState.particles = GameState.particles.filter(p => p.update());
             },
             
@@ -1631,7 +1558,6 @@
                 GameState.bots.forEach((bot, index) => {
                     bot.update();
                     
-                    // Bot AI: shoot at player
                     if (Math.random() < 0.005 && GameState.player) {
                         const distToPlayer = Math.hypot(bot.x - GameState.player.x, bot.y - GameState.player.y);
                         if (distToPlayer < 1000) {
@@ -1656,12 +1582,10 @@
                         }
                     }
                     
-                    // Bot AI: move randomly
                     if (Math.random() < 0.01) {
                         bot.targetAngle += (Math.random() - 0.5) * Math.PI;
                     }
                     
-                    // Bot eats food
                     GameState.foods.forEach((food, foodIndex) => {
                         const dist = Math.hypot(bot.x - food.x, bot.y - food.y);
                         if(dist < CONFIG.COLLISION_DISTANCE) {
@@ -1679,7 +1603,6 @@
                 GameState.projectiles = GameState.projectiles.filter(proj => {
                     if (!proj.update()) return false;
                     
-                    // Check collision with player
                     if (proj.owner !== 'player' && GameState.player) {
                         const dist = Math.hypot(proj.x - GameState.player.x, proj.y - GameState.player.y);
                         if (dist < GameState.player.radius + proj.radius) {
@@ -1693,7 +1616,6 @@
                         }
                     }
                     
-                    // Check collision with bots
                     if (proj.owner === 'player') {
                         for (let i = 0; i < GameState.bots.length; i++) {
                             const bot = GameState.bots[i];
@@ -1709,7 +1631,6 @@
                                     GameState.coins += Math.floor(bot.score / 2);
                                     GameState.player.scoreBonus();
                                     
-                                    // Respawn bot
                                     const angle = Math.random() * Math.PI * 2;
                                     const distRespawn = 3000 + Math.random() * 5000;
                                     bot.x = Math.cos(angle) * distRespawn;
@@ -1724,7 +1645,6 @@
                         }
                     }
                     
-                    // Check collision with other players (multiplayer)
                     if (proj.owner !== 'player' && GameState.mode === 'multi') {
                         GameState.players.forEach((player, playerId) => {
                             if (playerId !== proj.owner) {
@@ -1733,7 +1653,6 @@
                                     const died = player.takeDamage(proj.damage);
                                     
                                     if (died && GameState.isHost) {
-                                        // Respawn player
                                         player.x = (Math.random() - 0.5) * 2000;
                                         player.y = (Math.random() - 0.5) * 2000;
                                         player.health = 100;
@@ -1829,14 +1748,12 @@
                 const centerX = size/2;
                 const centerY = size/2;
                 
-                // Draw boundary
                 ctx.strokeStyle = 'rgba(59,130,246,0.3)';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, size/2 - 2, 0, Math.PI * 2);
                 ctx.stroke();
                 
-                // Draw food
                 ctx.fillStyle = 'rgba(255,255,255,0.3)';
                 for(let i = 0; i < Math.min(GameState.foods.length, 100); i += 3) {
                     const food = GameState.foods[i];
@@ -1849,7 +1766,6 @@
                     }
                 }
                 
-                // Draw bots
                 ctx.fillStyle = 'rgba(239,68,68,0.8)';
                 GameState.bots.forEach(bot => {
                     const x = centerX + (bot.x * scale);
@@ -1861,7 +1777,6 @@
                     }
                 });
                 
-                // Draw other players
                 ctx.fillStyle = 'rgba(59,130,246,0.8)';
                 GameState.players.forEach(player => {
                     if(player.id === GameState.player.id) return;
@@ -1874,7 +1789,6 @@
                     }
                 });
                 
-                // Draw player
                 if (GameState.player) {
                     const playerX = centerX + (GameState.player.x * scale);
                     const playerY = centerY + (GameState.player.y * scale);
@@ -1916,7 +1830,6 @@
                 
                 container.innerHTML = '';
                 
-                // Add player
                 const playerItem = document.createElement('div');
                 playerItem.className = 'player-list-item';
                 playerItem.innerHTML = `
@@ -1926,7 +1839,6 @@
                 `;
                 container.appendChild(playerItem);
                 
-                // Add other players
                 GameState.players.forEach(player => {
                     if(player.id === GameState.player.id) return;
                     
@@ -1954,7 +1866,6 @@
                 }, 500);
             },
             
-            // ==================== MULTIPLAYER FUNCTIONS ====================
             sendPlayerUpdate() {
                 if(!GameState.conn) return;
                 
@@ -2035,14 +1946,12 @@
                         case 'game_state':
                             if(GameState.isHost) break;
                             
-                            // Update foods
                             data.foods.forEach((food, index) => {
                                 if(GameState.foods[index]) {
                                     GameState.foods[index] = food;
                                 }
                             });
                             
-                            // Update bots
                             data.bots.forEach((botData, index) => {
                                 if(GameState.bots[index]) {
                                     GameState.bots[index].x = botData.x;
@@ -2053,7 +1962,6 @@
                                 }
                             });
                             
-                            // Update players
                             data.players.forEach(playerData => {
                                 if(playerData.id === GameState.player.id) return;
                                 
@@ -2121,7 +2029,6 @@
                 document.getElementById('room-status').style.color = '#10b981';
 
                 try {
-                    // Initialize PeerJS as host
                     GameState.peer = new Peer(`host_${roomId}_${Date.now()}`, {
                         debug: 2
                     });
@@ -2133,7 +2040,6 @@
                         Room.hide();
                         Game.startMultiplayer(nick, true);
                         
-                        // Setup connection handler
                         GameState.peer.on('connection', (conn) => {
                             this.handleConnection(conn);
                         });
@@ -2165,14 +2071,12 @@
                 document.getElementById('room-status').style.color = '#10b981';
 
                 try {
-                    // Initialize PeerJS as client
                     GameState.peer = new Peer(`client_${roomId}_${Date.now()}`, {
                         debug: 2
                     });
                     
                     GameState.peer.on('open', async (id) => {
                         try {
-                            // Connect to host
                             const conn = GameState.peer.connect(`host_${roomId}_${Date.now() - 10000}`);
                             
                             conn.on('open', () => {
@@ -2183,12 +2087,10 @@
                                 Room.hide();
                                 Game.startMultiplayer(nick, false);
                                 
-                                // Setup message handler
                                 conn.on('data', (data) => {
                                     Game.handleNetworkData(data);
                                 });
                                 
-                                // Send join message
                                 conn.send({
                                     type: 'system_message',
                                     message: `${nick} telah bergabung!`
@@ -2228,7 +2130,6 @@
                         Game.handleNetworkData(data);
                     });
                     
-                    // Send current game state to new client
                     if(GameState.isHost) {
                         const gameState = {
                             type: 'game_state',
@@ -2247,7 +2148,6 @@
                             window.GameAudio.play('join');
                         }
                         
-                        // Broadcast join message
                         conn.send({
                             type: 'system_message',
                             message: 'Player baru bergabung!'
@@ -2290,10 +2190,8 @@
                 
                 if(!message || !GameState.player) return;
                 
-                // Add to local chat
                 this.addMessage(GameState.player.name, message, true);
                 
-                // Send to network if multiplayer
                 if(GameState.mode === 'multi' && GameState.conn) {
                     const data = {
                         type: 'chat_message',
@@ -2327,7 +2225,6 @@
                 
                 messagesDiv.appendChild(messageDiv);
                 
-                // Limit messages
                 while(messagesDiv.children.length > 20) {
                     messagesDiv.removeChild(messagesDiv.firstChild);
                 }
@@ -2411,7 +2308,6 @@
                     transition.classList.remove('color-flash');
                 }, 2000);
                 
-                // Update player color
                 GameState.player.color = nextColor === "rainbow" ? 
                     `hsl(${Math.random() * 360}, 100%, 60%)` : 
                     nextColor;
@@ -2485,7 +2381,6 @@
             const now = Date.now();
             if (now - GameState.lastShootTime < CONFIG.SHOOT_COOLDOWN) return;
             
-            // Determine ammo type
             let ammoType = 'normal';
             if (GameState.ammo.special > 0) {
                 ammoType = 'special';
@@ -2502,10 +2397,8 @@
                 window.GameAudio.play('shoot');
             }
             
-            // Use ammo
             GameState.ammo[ammoType]--;
             
-            // Create projectile
             const targetX = GameState.player.x + Math.cos(GameState.player.angle) * 1000;
             const targetY = GameState.player.y + Math.sin(GameState.player.angle) * 1000;
             const angle = Math.atan2(targetY - GameState.player.y, targetX - GameState.player.x);
@@ -2523,14 +2416,11 @@
             GameState.lastShootTime = now;
             GameState.shootCooldown = true;
             
-            // Recoil effect
             GameState.player.x -= Math.cos(angle) * 5;
             GameState.player.y -= Math.sin(angle) * 5;
             
-            // Update ammo display
             updateAmmoDisplay();
             
-            // Button effect
             document.getElementById('shoot-btn').style.transform = 'scale(0.9)';
             setTimeout(() => {
                 document.getElementById('shoot-btn').style.transform = 'scale(1)';
@@ -2579,9 +2469,6 @@
             if (window.GameAudio) {
                 window.GameAudio.play('powerup');
             }
-            
-            // Implement magnet logic here (attract food)
-            // For now, just show message
         }
 
         function pauseGame() {
@@ -2593,6 +2480,146 @@
                 showMessage("⏸️ Game Dijeda", 1000);
             } else {
                 showMessage("▶️ Game Dilanjutkan", 1000);
+            }
+        }
+
+        // ==================== PWA SYSTEM ====================
+        let deferredPrompt;
+        const installButton = document.getElementById('pwa-install-btn');
+        
+        if (installButton) {
+            installButton.addEventListener('click', async () => {
+                if (!deferredPrompt) {
+                    showInstallGuide();
+                    return;
+                }
+                
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response: ${outcome}`);
+                deferredPrompt = null;
+                installButton.style.display = 'none';
+            });
+        }
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('🚀 beforeinstallprompt event fired');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            setTimeout(() => {
+                if (deferredPrompt && installButton) {
+                    installButton.style.display = 'block';
+                    console.log('📲 Install button shown');
+                }
+            }, 5000);
+        });
+        
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA installed successfully');
+            if (installButton) installButton.style.display = 'none';
+            showMessage('🎉 Game berhasil diinstall!', 3000);
+        });
+        
+        function showInstallGuide() {
+            const guideHTML = `
+                <div style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(20,20,40,0.95);
+                    padding: 30px;
+                    border-radius: 20px;
+                    border: 3px solid #a855f7;
+                    z-index: 10001;
+                    max-width: 400px;
+                    text-align: center;
+                    backdrop-filter: blur(10px);
+                ">
+                    <h3 style="color: #a855f7; margin-bottom: 20px;">📲 Cara Install Game</h3>
+                    
+                    <div style="text-align: left; margin: 20px 0; font-size: 14px;">
+                        <div style="margin: 10px 0; padding: 10px; background: rgba(168,85,247,0.1); border-radius: 10px;">
+                            <strong>Chrome/Edge Desktop:</strong><br>
+                            Klik icon <span style="color: #a855f7">📲</span> di address bar
+                        </div>
+                        
+                        <div style="margin: 10px 0; padding: 10px; background: rgba(168,85,247,0.1); border-radius: 10px;">
+                            <strong>Chrome Android:</strong><br>
+                            Menu (⋮) → "Add to Home screen"
+                        </div>
+                        
+                        <div style="margin: 10px 0; padding: 10px; background: rgba(168,85,247,0.1); border-radius: 10px;">
+                            <strong>Safari iOS:</strong><br>
+                            Klik share (□↑) → "Add to Home Screen"
+                        </div>
+                    </div>
+                    
+                    <button onclick="this.parentElement.remove()" style="
+                        padding: 10px 20px;
+                        background: #a855f7;
+                        color: white;
+                        border: none;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        margin-top: 10px;
+                    ">
+                        Tutup
+                    </button>
+                </div>
+            `;
+            
+            const guideDiv = document.createElement('div');
+            guideDiv.innerHTML = guideHTML;
+            document.body.appendChild(guideDiv);
+        }
+        
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swContent = `
+                    self.addEventListener('install', (event) => {
+                        console.log('Service Worker: Installing...');
+                        event.waitUntil(
+                            caches.open('cacing-arena-v1').then((cache) => {
+                                return cache.addAll([
+                                    './',
+                                    './index.html'
+                                ]);
+                            })
+                        );
+                    });
+                    
+                    self.addEventListener('fetch', (event) => {
+                        event.respondWith(
+                            caches.match(event.request).then((response) => {
+                                return response || fetch(event.request);
+                            })
+                        );
+                    });
+                `;
+                
+                const blob = new Blob([swContent], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                
+                navigator.serviceWorker.register(swUrl)
+                    .then(registration => {
+                        console.log('✅ Service Worker registered:', registration.scope);
+                        URL.revokeObjectURL(swUrl);
+                    })
+                    .catch(error => {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
+        
+        function checkPWAStatus() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+            
+            if (isStandalone || isFullscreen) {
+                console.log('✅ Running as installed PWA');
+                if (installButton) installButton.style.display = 'none';
             }
         }
 
@@ -2615,6 +2642,9 @@
             
             // Setup keyboard controls
             setupKeyboardControls();
+            
+            // Check PWA status
+            checkPWAStatus();
             
             // Hide loading setelah 1.5s
             setTimeout(() => {
@@ -2655,7 +2685,6 @@
                 }
             };
             
-            // Keyboard shortcut (M key)
             document.addEventListener('keydown', function(e) {
                 if(e.key === 'm' || e.key === 'M') {
                     if (window.GameAudio) {
@@ -2663,7 +2692,6 @@
                         btn.innerHTML = isEnabled ? '🔊' : '🔇';
                         btn.style.borderColor = isEnabled ? '#a855f7' : '#ef4444';
                         
-                        // Animasi tekan
                         btn.style.transform = 'scale(0.9)';
                         setTimeout(() => btn.style.transform = 'scale(1)', 100);
                         
@@ -2679,7 +2707,6 @@
             document.addEventListener('keydown', (e) => {
                 keys[e.key.toLowerCase()] = true;
                 
-                // Kontrol pergerakan dengan WASD atau arrow keys
                 if (GameState.player && GameState.active && !GameState.paused) {
                     let angleChange = 0;
                     
@@ -2694,23 +2721,19 @@
                         GameState.player.targetAngle += angleChange;
                     }
                     
-                    // Tembak dengan spasi
                     if (e.key === ' ' && !keys[' ']) {
                         shoot();
                         keys[' '] = true;
                     }
                     
-                    // Pause dengan Escape
                     if (e.key === 'Escape') {
                         pauseGame();
                     }
                     
-                    // Speed boost dengan Shift
                     if (e.key === 'Shift') {
                         activateSpeed();
                     }
                     
-                    // Magnet dengan Ctrl
                     if (e.key === 'Control') {
                         activateMagnet();
                     }
@@ -2755,7 +2778,6 @@
                 const touchX = touch.clientX - rect.left;
                 const touchY = touch.clientY - rect.top;
                 
-                // Calculate angle from center
                 const centerX = canvas.width / 2;
                 const centerY = canvas.height / 2;
                 
@@ -2768,300 +2790,6 @@
                 }
             }
         }
-  
-// ==================== PWA MANAGER ====================
-const PWA = {
-  deferredPrompt: null,
-  isInstalled: false,
-  
-  init() {
-    this.checkInstallation();
-    this.setupListeners();
-    this.registerServiceWorker();
-    this.setupInstallButton();
-  },
-  
-  checkInstallation() {
-    // Cek apakah sudah diinstall sebagai PWA
-    this.isInstalled = (
-      window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true ||
-      document.referrer.includes('android-app://')
-    );
-    
-    console.log('PWA Status:', {
-      installed: this.isInstalled,
-      displayMode: this.getDisplayMode(),
-      hasServiceWorker: 'serviceWorker' in navigator
-    });
-    
-    if (this.isInstalled) {
-      console.log('✅ Running as installed PWA');
-      this.onPWAInstalled();
-    }
-  },
-  
-  getDisplayMode() {
-    if (window.matchMedia('(display-mode: standalone)').matches) return 'standalone';
-    if (window.matchMedia('(display-mode: fullscreen)').matches) return 'fullscreen';
-    if (window.matchMedia('(display-mode: minimal-ui)').matches) return 'minimal-ui';
-    if (window.matchMedia('(display-mode: browser)').matches) return 'browser';
-    return 'unknown';
-  },
-  
-  setupListeners() {
-    // Before install prompt
-    window.addEventListener('beforeinstallprompt', (e) => {
-      console.log('🚀 beforeinstallprompt event fired');
-      e.preventDefault();
-      this.deferredPrompt = e;
-      this.showInstallButton(3000);
-    });
-    
-    // App installed
-    window.addEventListener('appinstalled', (e) => {
-      console.log('✅ App installed successfully');
-      this.isInstalled = true;
-      this.hideInstallButton();
-      showMessage('🎉 Game berhasil diinstall!', 3000);
-      this.onPWAInstalled();
-    });
-    
-    // Online/offline
-    window.addEventListener('offline', () => {
-      showMessage('⚠️ Anda sedang offline', 2000);
-    });
-    
-    window.addEventListener('online', () => {
-      showMessage('✅ Koneksi kembali', 2000);
-    });
-  },
-  
-  registerServiceWorker() {
-    if (!('serviceWorker' in navigator)) {
-      console.log('⚠️ Service Worker not supported');
-      return;
-    }
-    
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(registration => {
-          console.log('✅ Service Worker registered:', registration);
-          
-          // Check for updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            console.log('🔄 New Service Worker found:', newWorker);
-            
-            newWorker.addEventListener('statechange', () => {
-              console.log('Service Worker state:', newWorker.state);
-            });
-          });
-          
-          // Check if service worker is controlling the page
-          if (registration.active) {
-            console.log('Service Worker is active and controlling the page');
-          }
-        })
-        .catch(error => {
-          console.log('❌ Service Worker registration failed:', error);
-        });
-    });
-  },
-  
-  setupInstallButton() {
-    // Create install button
-    const installBtn = document.createElement('button');
-    installBtn.id = 'pwa-install-btn';
-    installBtn.innerHTML = '📲 INSTALL GAME';
-    installBtn.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 12px 24px;
-      background: linear-gradient(135deg, #a855f7, #7c3aed);
-      color: white;
-      border: none;
-      border-radius: 25px;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      z-index: 10000;
-      box-shadow: 0 4px 12px rgba(168,85,247,0.4);
-      display: none;
-      animation: fadeIn 0.3s;
-    `;
-    
-    installBtn.addEventListener('click', () => this.installApp());
-    document.body.appendChild(installBtn);
-  },
-  
-  showInstallButton(delay = 0) {
-    if (this.isInstalled) return;
-    
-    setTimeout(() => {
-      const btn = document.getElementById('pwa-install-btn');
-      if (btn && this.deferredPrompt) {
-        btn.style.display = 'block';
-        
-        // Auto hide after 15 seconds
-        setTimeout(() => this.hideInstallButton(), 15000);
-      }
-    }, delay);
-  },
-  
-  hideInstallButton() {
-    const btn = document.getElementById('pwa-install-btn');
-    if (btn) btn.style.display = 'none';
-  },
-  
-  async installApp() {
-    if (!this.deferredPrompt) {
-      console.log('No install prompt available');
-      this.showInstallGuide();
-      return;
-    }
-    
-    try {
-      console.log('Showing install prompt...');
-      this.deferredPrompt.prompt();
-      
-      const { outcome } = await this.deferredPrompt.userChoice;
-      console.log('User choice:', outcome);
-      
-      this.deferredPrompt = null;
-      this.hideInstallButton();
-      
-      if (outcome === 'accepted') {
-        console.log('User accepted install');
-      } else {
-        console.log('User dismissed install');
-      }
-    } catch (error) {
-      console.log('Install error:', error);
-      this.showInstallGuide();
-    }
-  },
-  
-  showInstallGuide() {
-    const guide = `
-      <div style="
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(20,20,40,0.95);
-        padding: 30px;
-        border-radius: 20px;
-        border: 3px solid #a855f7;
-        z-index: 10001;
-        max-width: 400px;
-        text-align: center;
-        backdrop-filter: blur(10px);
-      ">
-        <h3 style="color: #a855f7; margin-bottom: 20px;">📲 Cara Install</h3>
-        
-        <div style="text-align: left; margin: 20px 0;">
-          <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #3b82f6;">
-            <strong>Chrome/Edge:</strong><br>
-            Klik menu (⋮) → "Install Cacing Arena"
-          </div>
-          
-          <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #10b981;">
-            <strong>Safari:</strong><br>
-            Klik share (□↑) → "Add to Home Screen"
-          </div>
-          
-          <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #f59e0b;">
-            <strong>Android Chrome:</strong><br>
-            Menu (⋮) → "Add to Home screen"
-          </div>
-        </div>
-        
-        <button onclick="this.parentElement.remove()" style="
-          padding: 10px 20px;
-          background: #a855f7;
-          color: white;
-          border: none;
-          border-radius: 10px;
-          cursor: pointer;
-          margin-top: 10px;
-        ">
-          Tutup
-        </button>
-      </div>
-    `;
-    
-    const guideEl = document.createElement('div');
-    guideEl.innerHTML = guide;
-    document.body.appendChild(guideEl);
-  },
-  
-  onPWAInstalled() {
-    // Fitur khusus untuk PWA mode
-    console.log('PWA features activated');
-    
-    // Force landscape
-    if (screen.orientation && screen.orientation.lock) {
-      try {
-        screen.orientation.lock('landscape');
-      } catch (e) {
-        console.log('Orientation lock not supported');
-      }
-    }
-    
-    // Disable back button
-    window.history.pushState(null, null, window.location.href);
-    window.onpopstate = function() {
-      window.history.go(1);
-    };
-    
-    // Hide install button
-    this.hideInstallButton();
-  }
-};
-
-// ==================== ANIMATION ====================
-// Tambahkan di CSS atau dalam style tag
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-  }
-  
-  #pwa-install-btn {
-    animation: fadeIn 0.3s, pulse 2s infinite;
-  }
-  
-  #pwa-install-btn:hover {
-    animation: none;
-    transform: scale(1.05);
-  }
-`;
-document.head.appendChild(style);
-
-// ==================== INIT PWA ====================
-// Panggil di init() function yang sudah ada
-function init() {
-  console.log("Initializing game...");
-  
-  // Setup canvas dan lainnya...
-  // ... kode yang sudah ada ...
-  
-  // Initialize PWA
-  setTimeout(() => {
-    PWA.init();
-  }, 1000);
-  
-  // ... sisa kode init ...
-}
 
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('load', init);
@@ -3074,8 +2802,9 @@ function init() {
         window.activateSpeed = activateSpeed;
         window.activateMagnet = activateMagnet;
         window.pauseGame = pauseGame;
+        window.showInstallGuide = showInstallGuide;
 
-        console.log("👥 Cacing Mabar Arena Loaded!");
+        console.log("👥 Cacing Mabar Arena PWA Ready!");
     </script>
 </body>
 </html>
