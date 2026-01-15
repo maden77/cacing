@@ -13,6 +13,29 @@
         <link rel="icon" href="icon2048-192x192.png" sizes="192x192">
     <title>Cacing Arena Pro - Mabar LAN</title>
     <style>
+   /* Animasi untuk install button */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#install-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 10000;
+  box-shadow: 0 4px 12px rgba(168,85,247,0.4);
+  display: none;
+  animation: fadeIn 0.3s;
+}
         /* RESET DAN ORIENTASI LANDSCAPE */
         * { 
             margin: 0; 
