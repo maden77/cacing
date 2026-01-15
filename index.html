@@ -2768,6 +2768,300 @@
                 }
             }
         }
+  
+// ==================== PWA MANAGER ====================
+const PWA = {
+  deferredPrompt: null,
+  isInstalled: false,
+  
+  init() {
+    this.checkInstallation();
+    this.setupListeners();
+    this.registerServiceWorker();
+    this.setupInstallButton();
+  },
+  
+  checkInstallation() {
+    // Cek apakah sudah diinstall sebagai PWA
+    this.isInstalled = (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true ||
+      document.referrer.includes('android-app://')
+    );
+    
+    console.log('PWA Status:', {
+      installed: this.isInstalled,
+      displayMode: this.getDisplayMode(),
+      hasServiceWorker: 'serviceWorker' in navigator
+    });
+    
+    if (this.isInstalled) {
+      console.log('✅ Running as installed PWA');
+      this.onPWAInstalled();
+    }
+  },
+  
+  getDisplayMode() {
+    if (window.matchMedia('(display-mode: standalone)').matches) return 'standalone';
+    if (window.matchMedia('(display-mode: fullscreen)').matches) return 'fullscreen';
+    if (window.matchMedia('(display-mode: minimal-ui)').matches) return 'minimal-ui';
+    if (window.matchMedia('(display-mode: browser)').matches) return 'browser';
+    return 'unknown';
+  },
+  
+  setupListeners() {
+    // Before install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('🚀 beforeinstallprompt event fired');
+      e.preventDefault();
+      this.deferredPrompt = e;
+      this.showInstallButton(3000);
+    });
+    
+    // App installed
+    window.addEventListener('appinstalled', (e) => {
+      console.log('✅ App installed successfully');
+      this.isInstalled = true;
+      this.hideInstallButton();
+      showMessage('🎉 Game berhasil diinstall!', 3000);
+      this.onPWAInstalled();
+    });
+    
+    // Online/offline
+    window.addEventListener('offline', () => {
+      showMessage('⚠️ Anda sedang offline', 2000);
+    });
+    
+    window.addEventListener('online', () => {
+      showMessage('✅ Koneksi kembali', 2000);
+    });
+  },
+  
+  registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) {
+      console.log('⚠️ Service Worker not supported');
+      return;
+    }
+    
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(registration => {
+          console.log('✅ Service Worker registered:', registration);
+          
+          // Check for updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            console.log('🔄 New Service Worker found:', newWorker);
+            
+            newWorker.addEventListener('statechange', () => {
+              console.log('Service Worker state:', newWorker.state);
+            });
+          });
+          
+          // Check if service worker is controlling the page
+          if (registration.active) {
+            console.log('Service Worker is active and controlling the page');
+          }
+        })
+        .catch(error => {
+          console.log('❌ Service Worker registration failed:', error);
+        });
+    });
+  },
+  
+  setupInstallButton() {
+    // Create install button
+    const installBtn = document.createElement('button');
+    installBtn.id = 'pwa-install-btn';
+    installBtn.innerHTML = '📲 INSTALL GAME';
+    installBtn.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(168,85,247,0.4);
+      display: none;
+      animation: fadeIn 0.3s;
+    `;
+    
+    installBtn.addEventListener('click', () => this.installApp());
+    document.body.appendChild(installBtn);
+  },
+  
+  showInstallButton(delay = 0) {
+    if (this.isInstalled) return;
+    
+    setTimeout(() => {
+      const btn = document.getElementById('pwa-install-btn');
+      if (btn && this.deferredPrompt) {
+        btn.style.display = 'block';
+        
+        // Auto hide after 15 seconds
+        setTimeout(() => this.hideInstallButton(), 15000);
+      }
+    }, delay);
+  },
+  
+  hideInstallButton() {
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) btn.style.display = 'none';
+  },
+  
+  async installApp() {
+    if (!this.deferredPrompt) {
+      console.log('No install prompt available');
+      this.showInstallGuide();
+      return;
+    }
+    
+    try {
+      console.log('Showing install prompt...');
+      this.deferredPrompt.prompt();
+      
+      const { outcome } = await this.deferredPrompt.userChoice;
+      console.log('User choice:', outcome);
+      
+      this.deferredPrompt = null;
+      this.hideInstallButton();
+      
+      if (outcome === 'accepted') {
+        console.log('User accepted install');
+      } else {
+        console.log('User dismissed install');
+      }
+    } catch (error) {
+      console.log('Install error:', error);
+      this.showInstallGuide();
+    }
+  },
+  
+  showInstallGuide() {
+    const guide = `
+      <div style="
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(20,20,40,0.95);
+        padding: 30px;
+        border-radius: 20px;
+        border: 3px solid #a855f7;
+        z-index: 10001;
+        max-width: 400px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+      ">
+        <h3 style="color: #a855f7; margin-bottom: 20px;">📲 Cara Install</h3>
+        
+        <div style="text-align: left; margin: 20px 0;">
+          <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #3b82f6;">
+            <strong>Chrome/Edge:</strong><br>
+            Klik menu (⋮) → "Install Cacing Arena"
+          </div>
+          
+          <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #10b981;">
+            <strong>Safari:</strong><br>
+            Klik share (□↑) → "Add to Home Screen"
+          </div>
+          
+          <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #f59e0b;">
+            <strong>Android Chrome:</strong><br>
+            Menu (⋮) → "Add to Home screen"
+          </div>
+        </div>
+        
+        <button onclick="this.parentElement.remove()" style="
+          padding: 10px 20px;
+          background: #a855f7;
+          color: white;
+          border: none;
+          border-radius: 10px;
+          cursor: pointer;
+          margin-top: 10px;
+        ">
+          Tutup
+        </button>
+      </div>
+    `;
+    
+    const guideEl = document.createElement('div');
+    guideEl.innerHTML = guide;
+    document.body.appendChild(guideEl);
+  },
+  
+  onPWAInstalled() {
+    // Fitur khusus untuk PWA mode
+    console.log('PWA features activated');
+    
+    // Force landscape
+    if (screen.orientation && screen.orientation.lock) {
+      try {
+        screen.orientation.lock('landscape');
+      } catch (e) {
+        console.log('Orientation lock not supported');
+      }
+    }
+    
+    // Disable back button
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function() {
+      window.history.go(1);
+    };
+    
+    // Hide install button
+    this.hideInstallButton();
+  }
+};
+
+// ==================== ANIMATION ====================
+// Tambahkan di CSS atau dalam style tag
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  
+  #pwa-install-btn {
+    animation: fadeIn 0.3s, pulse 2s infinite;
+  }
+  
+  #pwa-install-btn:hover {
+    animation: none;
+    transform: scale(1.05);
+  }
+`;
+document.head.appendChild(style);
+
+// ==================== INIT PWA ====================
+// Panggil di init() function yang sudah ada
+function init() {
+  console.log("Initializing game...");
+  
+  // Setup canvas dan lainnya...
+  // ... kode yang sudah ada ...
+  
+  // Initialize PWA
+  setTimeout(() => {
+    PWA.init();
+  }, 1000);
+  
+  // ... sisa kode init ...
+}
 
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('load', init);
@@ -2783,29 +3077,5 @@
 
         console.log("👥 Cacing Mabar Arena Loaded!");
     </script>
-
-     <!-- Install Button -->
-<button id="install-btn" style="display: none;">
-  📲 Install App
-</button>
-
-<script>
-  // Register Service Worker
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(registration => {
-          console.log('ServiceWorker registered:', registration);
-        })
-        .catch(error => {
-          console.log('ServiceWorker registration failed:', error);
-        });
-    });
-  }
-</script>
-
-<script src="install-prompt.js"></script>
-                
-    
 </body>
 </html>
