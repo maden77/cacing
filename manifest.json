@@ -1,13 +1,12 @@
 {
-  "name": "Cacing Arena Pro",
-  "short_name": "Cacing Arena",
-  "description": "Game multiplayer cacing arena untuk Mabar LAN",
+  "name": "Cacing Arena",
+  "short_name": "CacingArena",
+  "description": "Game cacing arena multiplayer seru dengan teman",
   "start_url": "./",
-  "scope": "./",
   "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
   "orientation": "landscape",
-  "theme_color": "#0a0a1a",
-  "background_color": "#050510",
   "icons": [
     {
       "src": "icon-192.png",
@@ -17,6 +16,14 @@
     {
       "src": "icon-512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "1280x720",
       "type": "image/png"
     }
   ]
