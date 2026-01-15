@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cacing Arena - Game Multiplayer</title>
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: rgba(26, 26, 46, 0.9);
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            font-size: 28px;
+            color: #4cc9f0;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            background: linear-gradient(90deg, #4cc9f0, #f72585);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .player-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .score-box, .level-box {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid #4361ee;
+        }
+        
+        .score-label, .level-label {
+            font-size: 12px;
+            color: #b8b8d1;
+        }
+        
+        .score-value, .level-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4cc9f0;
+        }
+        
+        .game-content {
+            display: flex;
+            flex: 1;
+            background-color: rgba(20, 20, 40, 0.8);
+            border-radius: 0 0 15px 15px;
+            overflow: hidden;
+        }
+        
+        .side-panel {
+            width: 250px;
+            background-color: rgba(26, 26, 46, 0.9);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+        
+        .game-board {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            background-color: #0c0c1a;
+            display: block;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(67, 97, 238, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(247, 37, 133, 0.1) 0%, transparent 20%);
+        }
+        
+        .panel-section {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #4361ee;
+        }
+        
+        .panel-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #4cc9f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .panel-title i {
+            font-size: 20px;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .control-btn {
+            background-color: #4361ee;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background-color: #3a56d4;
+            transform: scale(1.05);
+        }
+        
+        .control-btn.center {
+            grid-column: 1 / span 3;
+        }
+        
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .shop-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .shop-item-cost {
+            background-color: #f72585;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .players-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .player-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .player-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .touch-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            z-index: 100;
+            display: none;
+        }
+        
+        .touch-joystick {
+            width: 120px;
+            height: 120px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .touch-joystick::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            top: 30px;
+            left: 30px;
+        }
+        
+        .mobile-only {
+            display: none;
+        }
+        
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .modal {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            border: 3px solid #4361ee;
+        }
+        
+        .modal h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #f72585;
+        }
+        
+        .modal p {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #b8b8d1;
+        }
+        
+        .btn {
+            background: linear-gradient(90deg, #4361ee, #3a56d4);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 12px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(90deg, #f72585, #b5179e);
+        }
+        
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        
+        .sound-control {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        
+        .sound-btn {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @media (max-width: 768px) {
+            .game-content {
+                flex-direction: column;
+            }
+            
+            .side-panel {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .panel-section {
+                flex: 1;
+                min-width: 45%;
+            }
+            
+            .controls {
+                display: none;
+            }
+            
+            .mobile-only {
+                display: block;
+            }
+            
+            .touch-controls {
+                display: flex;
+            }
+            
+            .header {
+                padding: 10px;
+            }
+            
+            .logo h1 {
+                font-size: 18px;
+            }
+            
+            .score-value, .level-value {
+                font-size: 18px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .panel-section {
+                min-width: 100%;
+            }
+        }
+        
+        /* Efek visual untuk sentuhan */
+        .touch-effect {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(76, 201, 240, 0.7) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            animation: touchPulse 0.5s ease-out forwards;
+            z-index: 50;
+        }
+        
+        @keyframes touchPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+            }
+        }
+        
+        /* Warna cacing berdasarkan level */
+        .color-1 { background-color: #4cc9f0; } /* Level 1 */
+        .color-2 { background-color: #4361ee; } /* Level 2 */
+        .color-3 { background-color: #3a0ca3; } /* Level 3 */
+        .color-4 { background-color: #7209b7; } /* Level 4 */
+        .color-5 { background-color: #f72585; } /* Level 5 */
+        .color-6 { background-color: #ff9e00; } /* Level 6 */
+        .color-7 { background-color: #ff5400; } /* Level 7 */
+        .color-8 { background-color: #00b4d8; } /* Level 8 */
+        .color-9 { background-color: #9d4edd; } /* Level 9 */
+        .color-10 { background-color: #ff006e; } /* Level 10 */
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-worm"></i>
+                <h1>Cacing Arena</h1>
+            </div>
+            <div class="player-info">
+                <div class="score-box">
+                    <div class="score-label">SKOR</div>
+                    <div class="score-value" id="score">0</div>
+                </div>
+                <div class="level-box">
+                    <div class="level-label">LEVEL</div>
+                    <div class="level-value" id="level">1</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-content">
+            <div class="side-panel">
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <i class="fas fa-gamepad"></i>
+                        Kontrol
+                    </div>
+                    <div class="controls">
+                        <button class="control-btn" id="upBtn"><i class="fas fa-arrow-up"></i></button>
+                        <button class="control-btn" id="leftBtn"><i class="fas fa-arrow-left"></i></button>
+                        <button class="control-btn" id="downBtn"><i class="fas fa-arrow-down"></i></button>
+                        <button class="control-btn" id="rightBtn"><i class="fas fa-arrow-right"></i></button>
+                        <button class="control-btn center" id="boostBtn"><i class="fas fa-bolt"></i> BOOST</button>
+                    </div>
+                    <div class="mobile-only">
+                        <p>Gunakan kontrol sentuh di layar untuk mobile</p>
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <i class="fas fa-store"></i>
+                        Toko
+                    </div>
+                    <div id="shopItems">
+                        <div class="shop-item" data-item="speed">
+                            <div>
+                                <i class="fas fa-tachometer-alt"></i>
+                                Tambah Kecepatan
+                            </div>
+                            <div class="shop-item-cost">100</div>
+                        </div>
+                        <div class="shop-item" data-item="length">
+                            <div>
+                                <i class="fas fa-ruler-vertical"></i>
+                                Tambah Panjang
+                            </div>
+                            <div class="shop-item-cost">150</div>
+                        </div>
+                        <div class="shop-item" data-item="shield">
+                            <div>
+                                <i class="fas fa-shield-alt"></i>
+                                Perisai (1x)
+                            </div>
+                            <div class="shop-item-cost">200</div>
+                        </div>
+                        <div class="shop-item" data-item="color">
+                            <div>
+                                <i class="fas fa-palette"></i>
+                                Warna Spesial
+                            </div>
+                            <div class="shop-item-cost">300</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">
+                        <i class="fas fa-users"></i>
+                        Pemain Aktif
+                    </div>
+                    <div class="players-list" id="playersList">
+                        <div class="player-item">
+                            <div style="display: flex; align-items: center;">
+                                <div class="player-color color-1"></div>
+                                <span>Anda (Pemain 1)</span>
+                            </div>
+                            <span>15 pts</span>
+                        </div>
+                        <div class="player-item">
+                            <div style="display: flex; align-items: center;">
+                                <div class="player-color color-2"></div>
+                                <span>Bot 1</span>
+                            </div>
+                            <span>8 pts</span>
+                        </div>
+                        <div class="player-item">
+                            <div style="display: flex; align-items: center;">
+                                <div class="player-color color-3"></div>
+                                <span>Bot 2</span>
+                            </div>
+                            <span>12 pts</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-small" id="multiplayerBtn" style="margin-top: 10px; width: 100%;">
+                        <i class="fas fa-wifi"></i> Mabar via WiFi
+                    </button>
+                </div>
+            </div>
+            
+            <div class="game-board">
+                <canvas id="gameCanvas"></canvas>
+                
+                <div class="touch-controls">
+                    <div class="touch-joystick" id="joystickArea"></div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="sound-control">
+            <div class="sound-btn" id="soundToggle">
+                <i class="fas fa-volume-up"></i>
+            </div>
+        </button>
+    </div>
+    
+    <!-- Overlay Menu Utama -->
+    <div class="game-overlay" id="mainMenu">
+        <div class="modal">
+            <h2><i class="fas fa-worm"></i> Cacing Arena</h2>
+            <p>Kumpulkan makanan, hindari tabrakan, dan jadi cacing terpanjang!</p>
+            <p>Jika kamu menabrak bot, bot akan mati dan jadi makanan!</p>
+            <button class="btn" id="startGameBtn">Mulai Bermain</button>
+            <button class="btn btn-secondary" id="multiplayerMenuBtn">Multiplayer WiFi</button>
+            <button class="btn btn-small" id="instructionsBtn">Cara Bermain</button>
+        </div>
+    </div>
+    
+    <!-- Overlay Game Over -->
+    <div class="game-overlay" id="gameOverScreen" style="display: none;">
+        <div class="modal">
+            <h2><i class="fas fa-skull-crossbones"></i> Game Over</h2>
+            <p id="finalScoreText">Skor Akhir: 0</p>
+            <p id="finalLengthText">Panjang Cacing: 10</p>
+            <p id="gameOverReason">Kamu menabrak dinding!</p>
+            <button class="btn" id="restartGameBtn">Main Lagi</button>
+            <button class="btn btn-secondary" id="backToMenuBtn">Kembali ke Menu</button>
+        </div>
+    </div>
+    
+    <!-- Overlay Multiplayer -->
+    <div class="game-overlay" id="multiplayerScreen" style="display: none;">
+        <div class="modal">
+            <h2><i class="fas fa-wifi"></i> Multiplayer WiFi</h2>
+            <p>Main bersama teman dalam satu jaringan WiFi!</p>
+            <div style="margin: 20px 0;">
+                <button class="btn" id="hostGameBtn"><i class="fas fa-network-wired"></i> Host Game</button>
+                <button class="btn btn-secondary" id="joinGameBtn"><i class="fas fa-plug"></i> Join Game</button>
+            </div>
+            <div id="roomCodeSection" style="display: none; margin-top: 20px;">
+                <p>Kode Room: <strong id="roomCode">ABCD</strong></p>
+                <p>Berikan kode ini ke temanmu untuk join!</p>
+            </div>
+            <div id="joinRoomSection" style="display: none; margin-top: 20px;">
+                <input type="text" id="roomCodeInput" placeholder="Masukkan Kode Room" style="padding: 10px; width: 100%; border-radius: 8px; border: none; margin-bottom: 10px;">
+                <button class="btn" id="connectRoomBtn">Connect</button>
+            </div>
+            <button class="btn btn-small" id="backToMainMenuBtn">Kembali</button>
+        </div>
+    </div>
+    
+    <!-- Overlay Instruksi -->
+    <div class="game-overlay" id="instructionsScreen" style="display: none;">
+        <div class="modal">
+            <h2><i class="fas fa-info-circle"></i> Cara Bermain</h2>
+            <div style="text-align: left; margin: 20px 0;">
+                <p><strong>Aturan Game:</strong></p>
+                <ul style="padding-left: 20px; margin-bottom: 15px;">
+                    <li>Kontrol cacing dengan tombol arrow atau sentuh</li>
+                    <li>Kumpulkan makanan untuk tumbuh panjang</li>
+                    <li>Hindari menabrak dinding atau tubuh sendiri</li>
+                    <li>Jika kamu menabrak bot, bot akan mati dan jadi makanan</li>
+                    <li>Bot yang menabrakmu tidak apa-apa (aman)</li>
+                    <li>Cacing terpanjang dan terrakus akan menang!</li>
+                </ul>
+                
+                <p><strong>Fitur:</strong></p>
+                <ul style="padding-left: 20px;">
+                    <li><i class="fas fa-palette"></i> Warna cacing berubah setiap level</li>
+                    <li><i class="fas fa-store"></i> Toko untuk upgrade cacing</li>
+                    <li><i class="fas fa-wifi"></i> Multiplayer dalam satu WiFi</li>
+                    <li><i class="fas fa-map"></i> Arena dengan berbagai rintangan</li>
+                    <li><i class="fas fa-music"></i> Sound efek dan musik</li>
+                </ul>
+            </div>
+            <button class="btn" id="closeInstructionsBtn">Mengerti, Mulai Main!</button>
+        </div>
+    </div>
+    
+    <!-- Audio Elements -->
+    <audio id="bgMusic" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="eatSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="crashSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-game-over-470.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="buySound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="boostSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Service Worker Registration for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful');
+                }).catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+        
+        // Game Variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            const gameBoard = document.querySelector('.game-board');
+            canvas.width = gameBoard.clientWidth;
+            canvas.height = gameBoard.clientHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Game State
+        let gameState = {
+            score: 0,
+            level: 1,
+            gameRunning: false,
+            gameOver: false,
+            soundEnabled: true,
+            playerSnake: null,
+            botSnakes: [],
+            foods: [],
+            obstacles: [],
+            particles: [],
+            gridSize: 20,
+            lastTime: 0,
+            playerSpeed: 5,
+            boostActive: false,
+            boostTime: 0,
+            playerColor: 1,
+            playerLength: 10,
+            playerShield: 0,
+            shopItems: [
+                { id: 'speed', name: 'Tambah Kecepatan', cost: 100, effect: 'Meningkatkan kecepatan cacing' },
+                { id: 'length', name: 'Tambah Panjang', cost: 150, effect: 'Menambah panjang awal cacing' },
+                { id: 'shield', name: 'Perisai (1x)', cost: 200, effect: 'Memberi perisai sekali pakai' },
+                { id: 'color', name: 'Warna Spesial', cost: 300, effect: 'Warna cacing spesial' }
+            ]
+        };
+        
+        // Snake Class
+        class Snake {
+            constructor(x, y, colorIndex, isPlayer = false, name = 'Snake') {
+                this.x = x;
+                this.y = y;
+                this.dx = 1;
+                this.dy = 0;
+                this.body = [];
+                this.length = isPlayer ? 10 : 5 + Math.floor(Math.random() * 6);
+                this.colorIndex = colorIndex;
+                this.isPlayer = isPlayer;
+                this.name = name;
+                this.speed = isPlayer ? gameState.playerSpeed : 3 + Math.random() * 2;
+                this.alive = true;
+                this.score = 0;
+                this.nextDirection = null;
+                
+                // Initialize body
+                for (let i = 0; i < this.length; i++) {
+                    this.body.push({x: this.x - i, y: this.y});
+                }
+            }
+            
+            update(deltaTime) {
+                if (!this.alive) return;
+                
+                // Update direction if there's a next direction queued
+                if (this.nextDirection) {
+                    this.dx = this.nextDirection.dx;
+                    this.dy = this.nextDirection.dy;
+                    this.nextDirection = null;
+                }
+                
+                // Calculate movement based on deltaTime
+                const moveInterval = 1000 / this.speed;
+                const timeSinceLastMove = deltaTime;
+                
+                if (timeSinceLastMove >= moveInterval) {
+                    // Move head
+                    this.x += this.dx;
+                    this.y += this.dy;
+                    
+                    // Wrap around screen
+                    const gridWidth = Math.floor(canvas.width / gameState.gridSize);
+                    const gridHeight = Math.floor(canvas.height / gameState.gridSize);
+                    
+                    if (this.x < 0) this.x = gridWidth - 1;
+                    if (this.x >= gridWidth) this.x = 0;
+                    if (this.y < 0) this.y = gridHeight - 1;
+                    if (this.y >= gridHeight) this.y = 0;
+                    
+                    // Add new head position
+                    this.body.unshift({x: this.x, y: this.y});
+                    
+                    // Remove tail if body is too long
+                    if (this.body.length > this.length) {
+                        this.body.pop();
+                    }
+                }
+                
+                // For bots, change direction randomly
+                if (!this.isPlayer && Math.random() < 0.02) {
+                    this.changeDirectionRandomly();
+                }
+            }
+            
+            changeDirectionRandomly() {
+                const directions = [
+                    {dx: 1, dy: 0},
+                    {dx: -1, dy: 0},
+                    {dx: 0, dy: 1},
+                    {dx: 0, dy: -1}
+                ];
+                
+                // Avoid reversing direction
+                const currentDir = {dx: this.dx, dy: this.dy};
+                const validDirections = directions.filter(dir => 
+                    !(dir.dx === -currentDir.dx && dir.dy === -currentDir.dy)
+                );
+                
+                const newDir = validDirections[Math.floor(Math.random() * validDirections.length)];
+                this.nextDirection = newDir;
+            }
+            
+            changeDirection(dx, dy) {
+                // Prevent reversing direction
+                if (!(dx === -this.dx && dy === -this.dy)) {
+                    this.nextDirection = {dx, dy};
+                }
+            }
+            
+            draw() {
+                if (!this.alive) return;
+                
+                // Draw body segments
+                for (let i = 0; i < this.body.length; i++) {
+                    const segment = this.body[i];
+                    
+                    // Calculate color based on position and level
+                    let colorClass = `color-${this.colorIndex}`;
+                    if (this.isPlayer) {
+                        colorClass = `color-${gameState.playerColor}`;
+                    }
+                    
+                    // Get color from CSS class
+                    const colorElem = document.createElement('div');
+                    colorElem.className = colorClass;
+                    document.body.appendChild(colorElem);
+                    const color = getComputedStyle(colorElem).backgroundColor;
+                    document.body.removeChild(colorElem);
+                    
+                    // Draw segment
+                    ctx.fillStyle = color;
+                    ctx.fillRect(
+                        segment.x * gameState.gridSize, 
+                        segment.y * gameState.gridSize, 
+                        gameState.gridSize - 1, 
+                        gameState.gridSize - 1
+                    );
+                    
+                    // Draw eyes on head for player
+                    if (i === 0 && this.isPlayer) {
+                        ctx.fillStyle = 'white';
+                        
+                        // Eye positions based on direction
+                        let eye1X, eye1Y, eye2X, eye2Y;
+                        
+                        if (this.dx === 1) { // Right
+                            eye1X = segment.x * gameState.gridSize + gameState.gridSize - 4;
+                            eye1Y = segment.y * gameState.gridSize + 5;
+                            eye2X = segment.x * gameState.gridSize + gameState.gridSize - 4;
+                            eye2Y = segment.y * gameState.gridSize + gameState.gridSize - 7;
+                        } else if (this.dx === -1) { // Left
+                            eye1X = segment.x * gameState.gridSize + 4;
+                            eye1Y = segment.y * gameState.gridSize + 5;
+                            eye2X = segment.x * gameState.gridSize + 4;
+                            eye2Y = segment.y * gameState.gridSize + gameState.gridSize - 7;
+                        } else if (this.dy === 1) { // Down
+                            eye1X = segment.x * gameState.gridSize + 5;
+                            eye1Y = segment.y * gameState.gridSize + gameState.gridSize - 4;
+                            eye2X = segment.x * gameState.gridSize + gameState.gridSize - 7;
+                            eye2Y = segment.y * gameState.gridSize + gameState.gridSize - 4;
+                        } else { // Up
+                            eye1X = segment.x * gameState.gridSize + 5;
+                            eye1Y = segment.y * gameState.gridSize + 4;
+                            eye2X = segment.x * gameState.gridSize + gameState.gridSize - 7;
+                            eye2Y = segment.y * gameState.gridSize + 4;
+                        }
+                        
+                        ctx.beginPath();
+                        ctx.arc(eye1X, eye1Y, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        ctx.beginPath();
+                        ctx.arc(eye2X, eye2Y, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Draw pupils
+                        ctx.fillStyle = 'black';
+                        ctx.beginPath();
+                        ctx.arc(eye1X, eye1Y, 1, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        ctx.beginPath();
+                        ctx.arc(eye2X, eye2Y, 1, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            checkCollisionWithSelf() {
+                if (!this.isPlayer) return false;
+                
+                // Check if head collides with any body segment (except head)
+                for (let i = 1; i < this.body.length; i++) {
+                    if (this.body[i].x === this.x && this.body[i].y === this.y) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            checkCollisionWithOther(otherSnake) {
+                if (!otherSnake.alive) return false;
+                
+                // Check if head collides with any segment of other snake
+                for (let i = 0; i < otherSnake.body.length; i++) {
+                    if (this.x === otherSnake.body[i].x && this.y === otherSnake.body[i].y) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            grow(amount = 1) {
+                this.length += amount;
+                this.score += amount * 10;
+                
+                if (this.isPlayer) {
+                    gameState.score += amount * 10;
+                    updateScore();
+                    playSound('eat');
+                    
+                    // Check for level up
+                    if (gameState.score >= gameState.level * 100) {
+                        levelUp();
+                    }
+                }
+            }
+            
+            die() {
+                this.alive = false;
+                
+                // Create food from dead snake body
+                if (!this.isPlayer) {
+                    for (let segment of this.body) {
+                        gameState.foods.push({
+                            x: segment.x,
+                            y: segment.y,
+                            type: 'special',
+                            value: 5
+                        });
+                    }
+                    playSound('crash');
+                }
+            }
+        }
+        
+        // Food Class
+        class Food {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.type = Math.random() > 0.8 ? 'special' : 'normal';
+                this.value = this.type === 'special' ? 5 : 1;
+            }
+            
+            draw() {
+                const size = gameState.gridSize - 2;
+                const x = this.x * gameState.gridSize + 1;
+                const y = this.y * gameState.gridSize + 1;
+                
+                if (this.type === 'special') {
+                    // Special food - glowing effect
+                    ctx.fillStyle = '#ffeb3b';
+                    ctx.beginPath();
+                    ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Glow effect
+                    ctx.shadowColor = '#ffeb3b';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                } else {
+                    // Normal food
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.beginPath();
+                    ctx.arc(x + size/2, y + size/2, size/2 - 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Highlight
+                    ctx.fillStyle = '#8BC34A';
+                    ctx.beginPath();
+                    ctx.arc(x + size/2 - 2, y + size/2 - 2, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // Initialize Game
+        function initGame() {
+            // Create player snake
+            const startX = Math.floor(Math.random() * Math.floor(canvas.width / gameState.gridSize / 2)) + 5;
+            const startY = Math.floor(Math.random() * Math.floor(canvas.height / gameState.gridSize / 2)) + 5;
+            gameState.playerSnake = new Snake(startX, startY, gameState.playerColor, true, 'Player 1');
+            
+            // Create bot snakes
+            gameState.botSnakes = [];
+            for (let i = 0; i < 3; i++) {
+                const botX = Math.floor(Math.random() * Math.floor(canvas.width / gameState.gridSize / 2)) + Math.floor(canvas.width / gameState.gridSize / 2);
+                const botY = Math.floor(Math.random() * Math.floor(canvas.height / gameState.gridSize / 2)) + 5;
+                const botColor = 2 + i; // Different colors for bots
+                gameState.botSnakes.push(new Snake(botX, botY, botColor, false, `Bot ${i+1}`));
+            }
+            
+            // Create initial food
+            gameState.foods = [];
+            for (let i = 0; i < 20; i++) {
+                spawnFood();
+            }
+            
+            // Create obstacles
+            gameState.obstacles = [];
+            createObstacles();
+            
+            // Reset game state
+            gameState.score = 0;
+            gameState.level = 1;
+            gameState.gameOver = false;
+            gameState.boostActive = false;
+            gameState.boostTime = 0;
+            gameState.playerColor = 1;
+            gameState.playerLength = 10;
+            gameState.playerShield = 0;
+            
+            updateScore();
+            updateLevel();
+            
+            // Start game loop
+            gameState.gameRunning = true;
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Spawn Food
+        function spawnFood() {
+            const gridWidth = Math.floor(canvas.width / gameState.gridSize);
+            const gridHeight = Math.floor(canvas.height / gameState.gridSize);
+            
+            let x, y;
+            let validPosition = false;
+            
+            // Try to find a valid position
+            while (!validPosition) {
+                x = Math.floor(Math.random() * gridWidth);
+                y = Math.floor(Math.random() * gridHeight);
+                
+                validPosition = true;
+                
+                // Check if position is occupied by snake
+                for (let snake of [gameState.playerSnake, ...gameState.botSnakes]) {
+                    if (!snake) continue;
+                    for (let segment of snake.body) {
+                        if (segment.x === x && segment.y === y) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                    if (!validPosition) break;
+                }
+                
+                // Check if position is occupied by existing food
+                for (let food of gameState.foods) {
+                    if (food.x === x && food.y === y) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+                
+                // Check if position is occupied by obstacle
+                for (let obstacle of gameState.obstacles) {
+                    if (obstacle.x === x && obstacle.y === y) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+            }
+            
+            gameState.foods.push(new Food(x, y));
+        }
+        
+        // Create Obstacles
+        function createObstacles() {
+            const gridWidth = Math.floor(canvas.width / gameState.gridSize);
+            const gridHeight = Math.floor(canvas.height / gameState.gridSize);
+            
+            // Create some random obstacles
+            for (let i = 0; i < 10; i++) {
+                const x = Math.floor(Math.random() * (gridWidth - 4)) + 2;
+                const y = Math.floor(Math.random() * (gridHeight - 4)) + 2;
+                
+                // Create a small cluster of obstacles
+                for (let j = 0; j < 4; j++) {
+                    const offsetX = Math.floor(Math.random() * 3) - 1;
+                    const offsetY = Math.floor(Math.random() * 3) - 1;
+                    
+                    if (x + offsetX > 0 && x + offsetX < gridWidth && 
+                        y + offsetY > 0 && y + offsetY < gridHeight) {
+                        gameState.obstacles.push({
+                            x: x + offsetX,
+                            y: y + offsetY
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Update Score Display
+        function updateScore() {
+            scoreElement.textContent = gameState.score;
+            
+            // Update player score in list
+            const playerItem = document.querySelector('.player-item:first-child span:last-child');
+            if (playerItem) {
+                playerItem.textContent = `${gameState.score} pts`;
+            }
+        }
+        
+        // Level Up
+        function levelUp() {
+            gameState.level++;
+            gameState.playerColor = (gameState.level - 1) % 10 + 1;
+            
+            // Increase player speed
+            gameState.playerSpeed = Math.min(10, 5 + gameState.level * 0.5);
+            if (gameState.playerSnake) {
+                gameState.playerSnake.speed = gameState.playerSpeed;
+            }
+            
+            // Add more bots at higher levels
+            if (gameState.level % 3 === 0 && gameState.botSnakes.length < 8) {
+                const botX = Math.floor(Math.random() * Math.floor(canvas.width / gameState.gridSize));
+                const botY = Math.floor(Math.random() * Math.floor(canvas.height / gameState.gridSize));
+                const botColor = 2 + gameState.botSnakes.length;
+                gameState.botSnakes.push(new Snake(botX, botY, botColor, false, `Bot ${gameState.botSnakes.length + 1}`));
+            }
+            
+            updateLevel();
+            playSound('buy'); // Use buy sound for level up
+        }
+        
+        // Update Level Display
+        function updateLevel() {
+            levelElement.textContent = gameState.level;
+            
+            // Update player color display
+            const playerColorElem = document.querySelector('.player-item:first-child .player-color');
+            if (playerColorElem) {
+                playerColorElem.className = `player-color color-${gameState.playerColor}`;
+            }
+        }
+        
+        // Game Loop
+        function gameLoop(timestamp) {
+            if (!gameState.lastTime) gameState.lastTime = timestamp;
+            const deltaTime = timestamp - gameState.lastTime;
+            gameState.lastTime = timestamp;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background pattern
+            drawBackground();
+            
+            if (gameState.gameRunning && !gameState.gameOver) {
+                // Update game state
+                updateGame(deltaTime);
+                
+                // Check for collisions
+                checkCollisions();
+                
+                // Draw everything
+                drawGame();
+                
+                // Continue game loop
+                requestAnimationFrame(gameLoop);
+            } else {
+                // Draw game over screen
+                drawGame();
+            }
+        }
+        
+        // Draw Background
+        function drawBackground() {
+            // Draw grid pattern
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            
+            // Vertical lines
+            for (let x = 0; x < canvas.width; x += gameState.gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Horizontal lines
+            for (let y = 0; y < canvas.height; y += gameState.gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw obstacles
+            ctx.fillStyle = 'rgba(100, 100, 100, 0.7)';
+            for (let obstacle of gameState.obstacles) {
+                ctx.fillRect(
+                    obstacle.x * gameState.gridSize, 
+                    obstacle.y * gameState.gridSize, 
+                    gameState.gridSize, 
+                    gameState.gridSize
+                );
+                
+                // Add texture to obstacles
+                ctx.fillStyle = 'rgba(150, 150, 150, 0.5)';
+                ctx.fillRect(
+                    obstacle.x * gameState.gridSize + 2, 
+                    obstacle.y * gameState.gridSize + 2, 
+                    gameState.gridSize - 4, 
+                    gameState.gridSize - 4
+                );
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.7)';
+            }
+        }
+        
+        // Update Game State
+        function updateGame(deltaTime) {
+            // Update player snake
+            gameState.playerSnake.update(deltaTime);
+            
+            // Update bot snakes
+            for (let bot of gameState.botSnakes) {
+                bot.update(deltaTime);
+            }
+            
+            // Check if player collected food
+            for (let i = gameState.foods.length - 1; i >= 0; i--) {
+                const food = gameState.foods[i];
+                if (gameState.playerSnake.x === food.x && gameState.playerSnake.y === food.y) {
+                    gameState.playerSnake.grow(food.value);
+                    gameState.foods.splice(i, 1);
+                    spawnFood();
+                    
+                    // Add particle effect
+                    createParticles(food.x * gameState.gridSize + gameState.gridSize/2, 
+                                   food.y * gameState.gridSize + gameState.gridSize/2, 
+                                   food.type === 'special' ? '#ffeb3b' : '#4CAF50');
+                }
+            }
+            
+            // Check if bots collected food
+            for (let bot of gameState.botSnakes) {
+                for (let i = gameState.foods.length - 1; i >= 0; i--) {
+                    const food = gameState.foods[i];
+                    if (bot.alive && bot.x === food.x && bot.y === food.y) {
+                        bot.grow(food.value);
+                        gameState.foods.splice(i, 1);
+                        spawnFood();
+                        break;
+                    }
+                }
+            }
+            
+            // Update boost
+            if (gameState.boostActive) {
+                gameState.boostTime += deltaTime;
+                if (gameState.boostTime > 3000) { // Boost lasts 3 seconds
+                    gameState.boostActive = false;
+                    gameState.playerSnake.speed = gameState.playerSpeed;
+                }
+            }
+            
+            // Update particles
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                const particle = gameState.particles[i];
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.life -= 1;
+                
+                if (particle.life <= 0) {
+                    gameState.particles.splice(i, 1);
+                }
+            }
+        }
+        
+        // Check Collisions
+        function checkCollisions() {
+            // Check player collision with self
+            if (gameState.playerSnake.checkCollisionWithSelf()) {
+                gameOver("Kamu menabrak tubuh sendiri!");
+                return;
+            }
+            
+            // Check player collision with bots
+            for (let i = 0; i < gameState.botSnakes.length; i++) {
+                const bot = gameState.botSnakes[i];
+                if (bot.alive && gameState.playerSnake.checkCollisionWithOther(bot)) {
+                    // Player hits bot - bot dies
+                    bot.die();
+                    gameState.playerSnake.grow(3);
+                    break;
+                }
+            }
+            
+            // Check bot collisions with player (bot dies if it hits player)
+            for (let i = 0; i < gameState.botSnakes.length; i++) {
+                const bot = gameState.botSnakes[i];
+                if (bot.alive && bot.checkCollisionWithOther(gameState.playerSnake)) {
+                    // Bot hits player - bot dies
+                    bot.die();
+                    gameState.playerSnake.grow(3);
+                }
+            }
+            
+            // Check bot collisions with other bots
+            for (let i = 0; i < gameState.botSnakes.length; i++) {
+                for (let j = i + 1; j < gameState.botSnakes.length; j++) {
+                    const bot1 = gameState.botSnakes[i];
+                    const bot2 = gameState.botSnakes[j];
+                    
+                    if (bot1.alive && bot2.alive) {
+                        if (bot1.checkCollisionWithOther(bot2)) {
+                            // Both bots die
+                            bot1.die();
+                            bot2.die();
+                        }
+                    }
+                }
+            }
+            
+            // Check collision with obstacles
+            for (let obstacle of gameState.obstacles) {
+                if (gameState.playerSnake.x === obstacle.x && gameState.playerSnake.y === obstacle.y) {
+                    gameOver("Kamu menabrak rintangan!");
+                    return;
+                }
+                
+                // Bots also die if they hit obstacles
+                for (let bot of gameState.botSnakes) {
+                    if (bot.alive && bot.x === obstacle.x && bot.y === obstacle.y) {
+                        bot.die();
+                    }
+                }
+            }
+        }
+        
+        // Draw Game
+        function drawGame() {
+            // Draw food
+            for (let food of gameState.foods) {
+                food.draw();
+            }
+            
+            // Draw player snake
+            gameState.playerSnake.draw();
+            
+            // Draw bot snakes
+            for (let bot of gameState.botSnakes) {
+                bot.draw();
+            }
+            
+            // Draw particles
+            for (let particle of gameState.particles) {
+                ctx.globalAlpha = particle.life / 100;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // Draw boost effect if active
+            if (gameState.boostActive) {
+                const head = gameState.playerSnake.body[0];
+                const x = head.x * gameState.gridSize + gameState.gridSize/2;
+                const y = head.y * gameState.gridSize + gameState.gridSize/2;
+                
+                ctx.fillStyle = 'rgba(76, 201, 240, 0.5)';
+                ctx.beginPath();
+                ctx.arc(x, y, gameState.gridSize * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw game over text if game is over
+            if (gameState.gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#f72585';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 50);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.fillText(`Skor: ${gameState.score}`, canvas.width / 2, canvas.height / 2);
+                ctx.fillText(`Panjang: ${gameState.playerSnake.length}`, canvas.width / 2, canvas.height / 2 + 40);
+                
+                ctx.font = '20px Arial';
+                ctx.fillText('Klik untuk main lagi', canvas.width / 2, canvas.height / 2 + 90);
+            }
+        }
+        
+        // Create Particles
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 10; i++) {
+                gameState.particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    color: color,
+                    size: Math.random() * 3 + 2,
+                    life: 100
+                });
+            }
+        }
+        
+        // Game Over
+        function gameOver(reason) {
+            gameState.gameOver = true;
+            gameState.gameRunning = false;
+            
+            // Show game over screen
+            document.getElementById('finalScoreText').textContent = `Skor Akhir: ${gameState.score}`;
+            document.getElementById('finalLengthText').textContent = `Panjang Cacing: ${gameState.playerSnake.length}`;
+            document.getElementById('gameOverReason').textContent = reason;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+            
+            playSound('crash');
+        }
+        
+        // Play Sound
+        function playSound(soundName) {
+            if (!gameState.soundEnabled) return;
+            
+            const soundElement = document.getElementById(`${soundName}Sound`);
+            if (soundElement) {
+                soundElement.currentTime = 0;
+                soundElement.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+        
+        // Toggle Sound
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const soundBtn = document.getElementById('soundToggle');
+            
+            if (gameState.soundEnabled) {
+                soundBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                document.getElementById('bgMusic').play().catch(e => console.log("Background music play failed:", e));
+            } else {
+                soundBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                document.getElementById('bgMusic').pause();
+            }
+        }
+        
+        // Boost Function
+        function activateBoost() {
+            if (!gameState.boostActive) {
+                gameState.boostActive = true;
+                gameState.boostTime = 0;
+                gameState.playerSnake.speed = gameState.playerSpeed * 1.5;
+                playSound('boost');
+            }
+        }
+        
+        // Buy Item from Shop
+        function buyShopItem(itemId) {
+            const item = gameState.shopItems.find(i => i.id === itemId);
+            
+            if (!item) return;
+            
+            if (gameState.score >= item.cost) {
+                gameState.score -= item.cost;
+                updateScore();
+                playSound('buy');
+                
+                switch(itemId) {
+                    case 'speed':
+                        gameState.playerSpeed = Math.min(15, gameState.playerSpeed + 1);
+                        if (gameState.playerSnake) {
+                            gameState.playerSnake.speed = gameState.playerSpeed;
+                        }
+                        break;
+                    case 'length':
+                        gameState.playerSnake.grow(5);
+                        break;
+                    case 'shield':
+                        gameState.playerShield++;
+                        break;
+                    case 'color':
+                        // Cycle to next color
+                        gameState.playerColor = gameState.playerColor % 10 + 1;
+                        updateLevel();
+                        break;
+                }
+                
+                // Show purchase effect
+                alert(`Berhasil membeli: ${item.name}`);
+            } else {
+                alert('Skor tidak cukup!');
+            }
+        }
+        
+        // Touch Controls
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        
+        function handleTouchStart(e) {
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            
+            // Create touch effect
+            createTouchEffect(touchStartX, touchStartY);
+            
+            // Prevent default to avoid scrolling
+            e.preventDefault();
+        }
+        
+        function handleTouchMove(e) {
+            const touch = e.touches[0];
+            touchEndX = touch.clientX;
+            touchEndY = touch.clientY;
+            
+            // Calculate swipe direction
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            // Only register significant swipes
+            if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    // Horizontal swipe
+                    if (dx > 0 && gameState.playerSnake) {
+                        gameState.playerSnake.changeDirection(1, 0); // Right
+                    } else if (dx < 0 && gameState.playerSnake) {
+                        gameState.playerSnake.changeDirection(-1, 0); // Left
+                    }
+                } else {
+                    // Vertical swipe
+                    if (dy > 0 && gameState.playerSnake) {
+                        gameState.playerSnake.changeDirection(0, 1); // Down
+                    } else if (dy < 0 && gameState.playerSnake) {
+                        gameState.playerSnake.changeDirection(0, -1); // Up
+                    }
+                }
+                
+                // Reset start position for continuous swiping
+                touchStartX = touchEndX;
+                touchStartY = touchEndY;
+            }
+            
+            e.preventDefault();
+        }
+        
+        function createTouchEffect(x, y) {
+            const effect = document.createElement('div');
+            effect.className = 'touch-effect';
+            effect.style.left = `${x}px`;
+            effect.style.top = `${y}px`;
+            document.body.appendChild(effect);
+            
+            // Remove effect after animation
+            setTimeout(() => {
+                document.body.removeChild(effect);
+            }, 500);
+        }
+        
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Show main menu initially
+            document.getElementById('mainMenu').style.display = 'flex';
+            
+            // Start game button
+            document.getElementById('startGameBtn').addEventListener('click', () => {
+                document.getElementById('mainMenu').style.display = 'none';
+                initGame();
+                playSound('bgMusic');
+            });
+            
+            // Restart game button
+            document.getElementById('restartGameBtn').addEventListener('click', () => {
+                document.getElementById('gameOverScreen').style.display = 'none';
+                initGame();
+            });
+            
+            // Back to menu button
+            document.getElementById('backToMenuBtn').addEventListener('click', () => {
+                document.getElementById('gameOverScreen').style.display = 'none';
+                document.getElementById('mainMenu').style.display = 'flex';
+            });
+            
+            // Multiplayer menu button
+            document.getElementById('multiplayerMenuBtn').addEventListener('click', () => {
+                document.getElementById('mainMenu').style.display = 'none';
+                document.getElementById('multiplayerScreen').style.display = 'flex';
+            });
+            
+            // Multiplayer button in game
+            document.getElementById('multiplayerBtn').addEventListener('click', () => {
+                alert('Fitur multiplayer akan segera hadir! Untuk sekarang main dulu dengan bot.');
+            });
+            
+            // Back to main menu from multiplayer
+            document.getElementById('backToMainMenuBtn').addEventListener('click', () => {
+                document.getElementById('multiplayerScreen').style.display = 'none';
+                document.getElementById('mainMenu').style.display = 'flex';
+            });
+            
+            // Instructions button
+            document.getElementById('instructionsBtn').addEventListener('click', () => {
+                document.getElementById('mainMenu').style.display = 'none';
+                document.getElementById('instructionsScreen').style.display = 'flex';
+            });
+            
+            // Close instructions
+            document.getElementById('closeInstructionsBtn').addEventListener('click', () => {
+                document.getElementById('instructionsScreen').style.display = 'none';
+                document.getElementById('mainMenu').style.display = 'flex';
+            });
+            
+            // Sound toggle
+            document.getElementById('soundToggle').addEventListener('click', toggleSound);
+            
+            // Direction buttons
+            document.getElementById('upBtn').addEventListener('click', () => {
+                if (gameState.playerSnake) gameState.playerSnake.changeDirection(0, -1);
+            });
+            
+            document.getElementById('downBtn').addEventListener('click', () => {
+                if (gameState.playerSnake) gameState.playerSnake.changeDirection(0, 1);
+            });
+            
+            document.getElementById('leftBtn').addEventListener('click', () => {
+                if (gameState.playerSnake) gameState.playerSnake.changeDirection(-1, 0);
+            });
+            
+            document.getElementById('rightBtn').addEventListener('click', () => {
+                if (gameState.playerSnake) gameState.playerSnake.changeDirection(1, 0);
+            });
+            
+            // Boost button
+            document.getElementById('boostBtn').addEventListener('click', activateBoost);
+            
+            // Shop items
+            const shopItems = document.querySelectorAll('.shop-item');
+            shopItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const itemId = item.getAttribute('data-item');
+                    buyShopItem(itemId);
+                });
+            });
+            
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (!gameState.playerSnake || !gameState.gameRunning) return;
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        gameState.playerSnake.changeDirection(0, -1);
+                        break;
+                    case 'ArrowDown':
+                        gameState.playerSnake.changeDirection(0, 1);
+                        break;
+                    case 'ArrowLeft':
+                        gameState.playerSnake.changeDirection(-1, 0);
+                        break;
+                    case 'ArrowRight':
+                        gameState.playerSnake.changeDirection(1, 0);
+                        break;
+                    case ' ':
+                        activateBoost();
+                        break;
+                }
+            });
+            
+            // Touch controls for mobile
+            canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+            canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+            
+            // Click/tap on canvas to restart after game over
+            canvas.addEventListener('click', () => {
+                if (gameState.gameOver) {
+                    document.getElementById('gameOverScreen').style.display = 'none';
+                    initGame();
+                }
+            });
+            
+            // Multiplayer simulation buttons
+            document.getElementById('hostGameBtn').addEventListener('click', () => {
+                document.getElementById('roomCodeSection').style.display = 'block';
+                document.getElementById('joinRoomSection').style.display = 'none';
+                document.getElementById('roomCode').textContent = Math.random().toString(36).substring(2, 6).toUpperCase();
+            });
+            
+            document.getElementById('joinGameBtn').addEventListener('click', () => {
+                document.getElementById('roomCodeSection').style.display = 'none';
+                document.getElementById('joinRoomSection').style.display = 'block';
+            });
+            
+            document.getElementById('connectRoomBtn').addEventListener('click', () => {
+                const roomCode = document.getElementById('roomCodeInput').value;
+                if (roomCode.length === 4) {
+                    alert(`Berhasil connect ke room ${roomCode}! Fitur multiplayer penuh akan segera hadir.`);
+                    document.getElementById('multiplayerScreen').style.display = 'none';
+                    initGame();
+                } else {
+                    alert('Kode room harus 4 karakter!');
+                }
+            });
+            
+            // Initialize with background music playing
+            const bgMusic = document.getElementById('bgMusic');
+            bgMusic.volume = 0.3;
+            bgMusic.play().catch(e => console.log("Autoplay prevented, user interaction required"));
+        });
+        
+        // Service Worker for PWA
+        const swCode = `
+        self.addEventListener('install', event => {
+            event.waitUntil(
+                caches.open('cacing-arena-v1').then(cache => {
+                    return cache.addAll([
+                        './',
+                        './index.html',
+                        './manifest.json'
+                    ]);
+                })
+            );
+        });
+        
+        self.addEventListener('fetch', event => {
+            event.respondWith(
+                caches.match(event.request).then(response => {
+                    return response || fetch(event.request);
+                })
+            );
+        });
+        `;
+        
+        // Create manifest for PWA
+        const manifest = {
+            "name": "Cacing Arena",
+            "short_name": "CacingArena",
+            "description": "Game cacing arena multiplayer dengan fitur lengkap",
+            "start_url": "./",
+            "display": "standalone",
+            "background_color": "#1a1a2e",
+            "theme_color": "#1a1a2e",
+            "icons": [
+                {
+                    "src": "https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/svg/logo-game-controller.svg",
+                    "sizes": "192x192",
+                    "type": "image/svg"
+                },
+                {
+                    "src": "https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/svg/logo-game-controller.svg",
+                    "sizes": "512x512",
+                    "type": "image/svg"
+                }
+            ]
+        };
+        
+        // Create and inject service worker
+        if ('serviceWorker' in navigator) {
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            
+            navigator.serviceWorker.register(swUrl).then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+            }).catch(error => {
+                console.log('Service Worker registration failed:', error);
+            });
+        }
+        
+        // Add manifest to document
+        const manifestElement = document.createElement('link');
+        manifestElement.rel = 'manifest';
+        manifestElement.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(manifest));
+        document.head.appendChild(manifestElement);
+    </script>
+</body>
+</html>
